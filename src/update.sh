@@ -4,7 +4,7 @@ cd `dirname $0`
 
 KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
-#BOOTLOADER=./ubiboot.bin
+BOOTLOADER=./ubiboot.bin
 OS_INFO=./os-release
 
 DISCLAIMER="NOTICE
@@ -77,13 +77,13 @@ if [ -f "$KERNEL" ] ; then
 	echo 'done'
 fi
 
-#if [ -f "$BOOTLOADER" ] ; then
-#	echo -n 'Installing updated boot loader... '
-#	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc status=noxfer
-#	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc status=noxfer
-#	sync
-#	echo 'done'
-#fi
+if [ -f "$BOOTLOADER" ] ; then
+	echo -n 'Installing updated boot loader... '
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc status=noxfer
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc status=noxfer
+	sync
+	echo 'done'
+fi
 
 dialog --msgbox 'Update complete!\nSystem will now restart.' 7 30
 reboot
