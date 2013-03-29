@@ -71,6 +71,13 @@ if [ -f "$KERNEL" ] ; then
 	fi
 
 	sync
+
+	# Don't create a backup if we are already running from the backup kernel,
+	# so that no matter what, we'll still have a working kernel installed.
+	if [ -z `cat /proc/cmdline |grep kernel_bak` ] ; then
+		cp /mnt/_kernel_update/vmlinuz.bin /mnt/_kernel_update/vmlinuz.bak
+	fi
+
 	mv /mnt/_kernel_update/update_kernel.bin /mnt/_kernel_update/vmlinuz.bin
 	umount /mnt/_kernel_update
 	rmdir /mnt/_kernel_update
