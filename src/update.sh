@@ -25,8 +25,11 @@ OLD_VERSION="$VERSION"
 
 . "$OS_INFO"
 if [ "$VERSION" = "$OLD_VERSION" ] ; then
-	dialog --msgbox 'System already up to date.' 6 30
-	exit
+	dialog --defaultno --yesno 'The system seems to be already up to date.\n\n
+Do you really want to continue?' 10 30
+	if [ $? -ne 0 ] ; then
+		exit
+	fi
 fi
 
 dialog --defaultno --yes-label 'Update' --no-label 'Cancel' --yesno "$DISCLAIMER" 19 48
