@@ -92,5 +92,11 @@ if [ -f "$BOOTLOADER" ] ; then
 	echo 'done'
 fi
 
-dialog --msgbox 'Update complete!\nSystem will now restart.' 7 30
+dialog --msgbox 'Update complete!\nThe system will now restart.\n\n
+If for some reason the system fails to boot, try to press the
+following keys while powering on the device:\n
+    -X to boot the last working kernel,\n
+    -Y to boot the last working rootfs.\n\n
+Note that pressing both keys during the power-on sequence will load the very
+same Operating System (kernel + rootfs) you had before upgrading.' 16 0
 reboot
