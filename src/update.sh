@@ -20,11 +20,35 @@ Do you want to update now?"
 
 KERNEL_PARTITION=/dev/mmcblk0p1
 
-. /etc/os-release
-OLD_VERSION="$VERSION"
+UP_TO_DATE=no
 
-. "$OS_INFO"
-if [ "$VERSION" = "$OLD_VERSION" ] ; then
+if [ -f "$KERNEL" ] ; then
+	mkdir /mnt/_kernel_update
+	mount $KERNEL_PARTITION /mnt/_kernel_update
+
+	DATE_OLD=`date -r /mnt/_kernel_update/vmlinuz.bin`
+	DATE_NEW=`date -r "$KERNEL"`
+
+	umount /mnt/_kernel_update
+	rmdir /mnt/_kernel_update
+
+	if [ "$DATE_OLD" = "$DATE_NEW" ] ; then
+		UP_TO_DATE=yes
+	fi
+fi
+
+if [ -f "$ROOTFS" ] ; then
+	. /etc/os-release
+	OLD_VERSION="$VERSION"
+
+	. "$OS_INFO"
+	if [ "$UP_TO_DATE" = "yes" -a "$VERSION" != "$OLD_VERSION" ] ; then
+		UP_TO_DATE=no
+		exit
+	fi
+fi
+
+if [ "$UP_TO_DATE" = "yes" ] ; then
 	dialog --defaultno --yesno 'The system seems to be already up to date.\n\n
 Do you really want to continue?' 10 30
 	if [ $? -ne 0 ] ; then
@@ -63,7 +87,7 @@ if [ -f "$KERNEL" ] ; then
 	mkdir /mnt/_kernel_update
 	mount $KERNEL_PARTITION /mnt/_kernel_update
 
-	cp "$KERNEL" /mnt/_kernel_update/update_kernel.bin
+	cp -a "$KERNEL" /mnt/_kernel_update/update_kernel.bin
 	if [ $? -ne 0 ] ; then
 		dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		rm /boot/update_r.bin
