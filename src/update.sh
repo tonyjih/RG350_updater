@@ -21,6 +21,7 @@ Do you want to update now?"
 KERNEL_PARTITION=/dev/mmcblk0p1
 
 UP_TO_DATE=no
+BAR=`which bar`
 
 if [ -f "$KERNEL" ] ; then
 	mkdir /mnt/_kernel_update
@@ -66,28 +67,42 @@ echo 'Update in progress - please be patient.'
 echo
 
 if [ -f "$ROOTFS" ] ; then
-	echo -n 'Installing updated root filesystem... '
+	echo 'Installing updated root filesystem... '
 
-	cp "$ROOTFS" /boot/update_rootfs.bin
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o /boot/update_rootfs.bin "$ROOTFS"
+	else
+		cp "$ROOTFS" /boot/update_rootfs.bin
+	fi
+
 	if [ $? -ne 0 ] ; then
 		dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
 		rm /boot/update_rootfs.bin
 		exit 1
 	fi
 
+	# Synchronize the dates
+	touch -d "`date -r "$ROOTFS" +'%F %T'`" /boot/update_rootfs.bin
+
 	sync
 	mv /boot/update_rootfs.bin /boot/update_r.bin
 	sync
-	echo 'done'
+	echo 'done.'
+	echo
 fi
 
 if [ -f "$KERNEL" ] ; then
-	echo -n 'Installing updated kernel... '
+	echo 'Installing updated kernel... '
 
 	mkdir /mnt/_kernel_update
 	mount $KERNEL_PARTITION /mnt/_kernel_update
 
-	cp -a "$KERNEL" /mnt/_kernel_update/update_kernel.bin
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o /mnt/_kernel_update/update_kernel.bin "$KERNEL"
+	else
+		cp "$KERNEL" /mnt/_kernel_update/update_kernel.bin
+	fi
+
 	if [ $? -ne 0 ] ; then
 		dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		rm /boot/update_r.bin
@@ -96,6 +111,9 @@ if [ -f "$KERNEL" ] ; then
 		rmdir /mnt/_kernel_update
 		exit 1
 	fi
+
+	# Synchronize the dates
+	touch -d "`date -r "$KERNEL" +'%F %T'`" /mnt/_kernel_update/update_kernel.bin
 
 	sync
 
@@ -108,15 +126,15 @@ if [ -f "$KERNEL" ] ; then
 	mv /mnt/_kernel_update/update_kernel.bin /mnt/_kernel_update/vmlinuz.bin
 	umount /mnt/_kernel_update
 	rmdir /mnt/_kernel_update
-	echo 'done'
+	echo 'done.'
+	echo
 fi
 
 if [ -f "$BOOTLOADER" ] ; then
-	echo -n 'Installing updated boot loader... '
+	echo 'Installing updated boot loader... '
 	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc
 	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc
 	sync
-	echo 'done'
 fi
 
 dialog --msgbox 'Update complete!\nThe system will now restart.\n\n
