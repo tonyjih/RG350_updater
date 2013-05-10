@@ -6,6 +6,20 @@ umask 0022
 rm -rf output
 mkdir output
 
+BOOTLOADER_VARIANTS="v11_ddr2_256mb v11_ddr2_512mb v20_mddr_512mb"
+
+for i in $BOOTLOADER_VARIANTS ; do
+	if [ -e "ubiboot-$i.bin" ] ; then
+		BOOT="`realpath ubiboot-$i.bin`"
+		BOOTLOADERS="$BOOTLOADERS $BOOT"
+		cp "$BOOT" "output/ubiboot-$i.bin"
+	else
+		BOOTLOADERS=""
+		rm output/ubiboot-*.bin
+		break
+	fi
+done
+
 # Get kernel metadata.
 if [ -e "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
@@ -35,6 +49,7 @@ fi
 echo
 echo "=========================="
 echo
+echo "Bootloaders:       $BOOTLOADERS"
 echo "Kernel:            $KERNEL"
 echo "Root file system:  $ROOTFS"
 echo "  build date:      $DATE"
@@ -86,6 +101,22 @@ if [ -e "$ROOTFS" ] ; then
 	ROOTFS="$ROOTFS output/rootfs_sha1.txt"
 fi
 
+if [ "$BOOTLOADERS" ] ; then
+	echo -n "Calculating SHA1 sum of bootloaders... "
+
+	BOOTLOADERS=""
+
+	for i in $BOOTLOADER_VARIANTS ; do
+		BOOT="output/ubiboot-$i.bin"
+		SHA1="output/ubiboot-$i-sha1.txt"
+		BOOTLOADERS="$BOOTLOADERS $BOOT $SHA1"
+
+		sha1sum "$BOOT" | cut -d' ' -f1 > "$SHA1"
+	done
+	echo "done"
+fi
+
+
 echo "$DATE" > output/date.txt
 
 # Create OPK.
@@ -95,6 +126,7 @@ mksquashfs \
 	src/opendingux.png \
 	src/update.sh \
 	output/date.txt \
+	$BOOTLOADERS \
 	$KERNEL \
 	$ROOTFS \
 	$OPK_FILE \

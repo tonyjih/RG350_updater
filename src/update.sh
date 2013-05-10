@@ -4,7 +4,6 @@ cd `dirname $0`
 
 KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
-BOOTLOADER=./ubiboot.bin
 DATE_FILE=./date.txt
 
 DISCLAIMER="\Zb\Z3NOTICE\Zn
@@ -70,6 +69,40 @@ fi
 clear
 echo 'Update in progress - please be patient.'
 echo
+
+HWVARIANT="`cat /proc/cmdline |sed 's/.*hwvariant=\([a-z_0-9]\+\).*/\1/'`"
+
+if [ -z "$HWVARIANT" ] ; then
+	# Only old "Frankenzeros" can have a bootloader so old that
+	# it doesn't pass the 'hwvariant' parameter to the kernel...
+	HWVARIANT="v11_ddr2_256mb"
+fi
+
+BOOTLOADER="./ubiboot-$HWVARIANT.bin"
+
+if [ -f "$BOOTLOADER" ] ; then
+	if [ -f "ubiboot-$HWVARIANT-sha1.txt" ] ; then
+		echo 'Verifying updated bootloader for corruption...'
+		if [ "$BAR" ] ; then
+			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
+		else
+			SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
+		fi
+
+		if [ "$SHA1" != "`cat ubiboot-$HWVARIANT-sha1.txt`" ] ; then
+			DIALOGRC="/tmp/dialog_err.rc" \
+				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
+			exit 1
+		fi
+	fi
+
+	echo -n 'Installing updated boot loader... '
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc
+	sync
+	echo 'done'
+	echo ''
+fi
 
 if [ -f "$ROOTFS" ] ; then
 	if [ -f "rootfs_sha1.txt" ] ; then
@@ -166,13 +199,6 @@ if [ -f "$KERNEL" ] ; then
 	rmdir /mnt/_kernel_update
 	echo 'done.'
 	echo
-fi
-
-if [ -f "$BOOTLOADER" ] ; then
-	echo 'Installing updated boot loader... '
-	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc
-	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc
-	sync
 fi
 
 dialog --msgbox 'Update complete!\nThe system will now restart.\n\n
