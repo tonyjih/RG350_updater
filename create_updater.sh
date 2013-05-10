@@ -67,11 +67,23 @@ if [ -e "$KERNEL" ] ; then
 	cp -a $KERNEL output/vmlinuz.bin
 	KERNEL="output/vmlinuz.bin"
 	chmod a-x "$KERNEL"
+
+	echo -n "Calculating SHA1 sum of kernel... "
+	sha1sum "$KERNEL" | cut -d' ' -f1 > "output/kernel_sha1.txt"
+	echo "done"
+
+	KERNEL="$KERNEL output/kernel_sha1.txt"
 fi
 
 if [ -e "$ROOTFS" ] ; then
 	cp -a $ROOTFS output/rootfs.squashfs
 	ROOTFS="output/rootfs.squashfs"
+
+	echo -n "Calculating SHA1 sum of rootfs... "
+	sha1sum "$ROOTFS" | cut -d' ' -f1 > "output/rootfs_sha1.txt"
+	echo "done"
+
+	ROOTFS="$ROOTFS output/rootfs_sha1.txt"
 fi
 
 # Create OPK.

@@ -64,6 +64,20 @@ echo 'Update in progress - please be patient.'
 echo
 
 if [ -f "$ROOTFS" ] ; then
+	if [ -f "rootfs_sha1.txt" ] ; then
+		echo 'Verifying updated root filesystem for corruption...'
+		if [ "$BAR" ] ; then
+			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS" | sha1sum | cut -d' ' -f1`
+		else
+			SHA1=`sha1sum "$ROOTFS" | cut -d' ' -f1`
+		fi
+
+		if [ "$SHA1" != "`cat rootfs_sha1.txt`" ] ; then
+			dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
+			exit 1
+		fi
+	fi
+
 	echo 'Installing updated root filesystem... '
 
 	if [ "$BAR" ] ; then
@@ -89,6 +103,21 @@ if [ -f "$ROOTFS" ] ; then
 fi
 
 if [ -f "$KERNEL" ] ; then
+	if [ -f "kernel_sha1.txt" ] ; then
+		echo 'Verifying updated kernel for corruption...'
+		if [ "$BAR" ] ; then
+			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL" | sha1sum | cut -d' ' -f1`
+		else
+			SHA1=`sha1sum "$KERNEL" | cut -d' ' -f1`
+		fi
+
+		if [ "$SHA1" != "`cat kernel_sha1.txt`" ] ; then
+			dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
+			rm /boot/update_r.bin
+			exit 1
+		fi
+	fi
+
 	echo 'Installing updated kernel... '
 
 	mkdir /mnt/_kernel_update
