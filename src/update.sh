@@ -5,6 +5,7 @@ cd `dirname $0`
 KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
 BOOTLOADER=./ubiboot.bin
+DATE_FILE=./date.txt
 
 DISCLAIMER="NOTICE
 
@@ -21,6 +22,11 @@ KERNEL_PARTITION=/dev/mmcblk0p1
 
 UP_TO_DATE=no
 BAR=`which bar`
+
+if [ -f "$DATE_FILE" ] ; then
+	DATE="`cat $DATE_FILE`"
+	export DIALOGOPTS="--backtitle \"OpenDingux update $DATE\""
+fi
 
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
@@ -56,7 +62,7 @@ Do you really want to continue?' 10 30
 	fi
 fi
 
-dialog --defaultno --yes-label 'Update' --no-label 'Cancel' --yesno "$DISCLAIMER" 19 48
+dialog --defaultno --yes-label 'Update' --no-label 'Cancel' --yesno "$DISCLAIMER" 15 48
 if [ $? -eq 1 ] ; then
 	exit
 fi

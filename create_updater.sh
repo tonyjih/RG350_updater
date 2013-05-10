@@ -86,12 +86,15 @@ if [ -e "$ROOTFS" ] ; then
 	ROOTFS="$ROOTFS output/rootfs_sha1.txt"
 fi
 
+echo "$DATE" > output/date.txt
+
 # Create OPK.
 OPK_FILE=output/gcw0-update-$DATE.opk
 mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \
 	src/update.sh \
+	output/date.txt \
 	$KERNEL \
 	$ROOTFS \
 	$OPK_FILE \
