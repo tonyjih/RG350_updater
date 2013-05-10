@@ -11,8 +11,13 @@ KERNEL=`realpath vmlinuz.bin`
 
 # Get rootfs metadata.
 ROOTFS=`realpath rootfs.squashfs`
-unsquashfs -n -i -d output/unsquashed $ROOTFS /etc/os-release
-DATE=`date -r output/unsquashed/etc/os-release +%Y-%m-%d`
+
+DATE=
+if [ `date -r "$KERNEL" +%s` -gt `date -r "$ROOTFS" +%s` ] ; then
+	DATE=`date -r "$KERNEL" +%F`
+else
+	DATE=`date -r "$ROOTFS" +%F`
+fi
 
 # Report metadata.
 echo
@@ -46,8 +51,8 @@ EOF
 # copy is made, specifying the symlink will include the symlink in the OPK
 # and specifying the real path might use a different name than the update
 # script expects.
-cp $KERNEL output/vmlinuz.bin
-cp $ROOTFS output/rootfs.squashfs
+cp -a $KERNEL output/vmlinuz.bin
+cp -a $ROOTFS output/rootfs.squashfs
 chmod a-x output/vmlinuz.bin
 
 # Create OPK.
@@ -56,7 +61,6 @@ mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \
 	src/update.sh \
-	output/unsquashed/etc/os-release \
 	output/vmlinuz.bin \
 	output/rootfs.squashfs \
 	$OPK_FILE \

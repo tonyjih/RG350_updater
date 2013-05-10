@@ -5,7 +5,6 @@ cd `dirname $0`
 KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
 BOOTLOADER=./ubiboot.bin
-OS_INFO=./os-release
 
 DISCLAIMER="NOTICE
 
@@ -38,14 +37,12 @@ if [ -f "$KERNEL" ] ; then
 	fi
 fi
 
-if [ -f "$ROOTFS" ] ; then
-	. /etc/os-release
-	OLD_VERSION="$VERSION"
+if [ -f "$ROOTFS" -a "$UP_TO_DATE" = "yes" ] ; then
+	DATE_OLD=`date -r /boot/rootfs.bin`
+	DATE_NEW=`date -r "$ROOTFS"`
 
-	. "$OS_INFO"
-	if [ "$UP_TO_DATE" = "yes" -a "$VERSION" != "$OLD_VERSION" ] ; then
+	if [ "$DATE_OLD" != "$DATE_NEW" ] ; then
 		UP_TO_DATE=no
-		exit
 	fi
 fi
 
