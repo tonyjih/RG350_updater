@@ -7,12 +7,12 @@ ROOTFS=./rootfs.squashfs
 BOOTLOADER=./ubiboot.bin
 DATE_FILE=./date.txt
 
-DISCLAIMER="NOTICE
+DISCLAIMER="\Zb\Z3NOTICE\Zn
 
 While we carefully constructed this updater,
 it is possible flaws in the updater or in
-the updated OS could lead to data loss. We
-recommend that you backup all valuable
+the updated OS could lead to \Zb\Z3data loss\Zn. We
+recommend that you \Zb\Z3backup\Zn all valuable
 personal data on your GCW Zero before you
 perform the update.
 
@@ -25,7 +25,7 @@ BAR=`which bar`
 
 if [ -f "$DATE_FILE" ] ; then
 	DATE="`cat $DATE_FILE`"
-	export DIALOGOPTS="--backtitle \"OpenDingux update $DATE\""
+	export DIALOGOPTS="--colors --backtitle \"OpenDingux update $DATE\""
 fi
 
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
