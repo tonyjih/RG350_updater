@@ -7,16 +7,28 @@ rm -rf output
 mkdir output
 
 # Get kernel metadata.
-KERNEL=`realpath vmlinuz.bin`
+if [ -e "vmlinuz.bin" ] ; then
+	KERNEL=`realpath vmlinuz.bin`
+fi
 
 # Get rootfs metadata.
-ROOTFS=`realpath rootfs.squashfs`
+if [ -e "rootfs.squashfs" ] ; then
+	ROOTFS=`realpath rootfs.squashfs`
+fi
 
-DATE=
-if [ `date -r "$KERNEL" +%s` -gt `date -r "$ROOTFS" +%s` ] ; then
+if [ "$KERNEL" -a "$ROOTFS" ] ; then
+	if [ `date -r "$KERNEL" +%s` -gt `date -r "$ROOTFS" +%s` ] ; then
+		DATE=`date -r "$KERNEL" +%F`
+	else
+		DATE=`date -r "$ROOTFS" +%F`
+	fi
+elif [ "$KERNEL" ] ; then
 	DATE=`date -r "$KERNEL" +%F`
-else
+elif [ "$ROOTFS" ] ; then
 	DATE=`date -r "$ROOTFS" +%F`
+else
+	echo "ERROR: No kernel or rootfs found."
+	exit 1
 fi
 
 # Report metadata.
@@ -51,9 +63,16 @@ EOF
 # copy is made, specifying the symlink will include the symlink in the OPK
 # and specifying the real path might use a different name than the update
 # script expects.
-cp -a $KERNEL output/vmlinuz.bin
-cp -a $ROOTFS output/rootfs.squashfs
-chmod a-x output/vmlinuz.bin
+if [ -e "$KERNEL" ] ; then
+	cp -a $KERNEL output/vmlinuz.bin
+	KERNEL="output/vmlinuz.bin"
+	chmod a-x "$KERNEL"
+fi
+
+if [ -e "$ROOTFS" ] ; then
+	cp -a $ROOTFS output/rootfs.squashfs
+	ROOTFS="output/rootfs.squashfs"
+fi
 
 # Create OPK.
 OPK_FILE=output/gcw0-update-$DATE.opk
@@ -61,8 +80,8 @@ mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \
 	src/update.sh \
-	output/vmlinuz.bin \
-	output/rootfs.squashfs \
+	$KERNEL \
+	$ROOTFS \
 	$OPK_FILE \
 	-no-progress -noappend -comp gzip -all-root
 
