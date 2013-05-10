@@ -22,6 +22,8 @@ KERNEL_PARTITION=/dev/mmcblk0p1
 UP_TO_DATE=no
 BAR=`which bar`
 
+echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
+
 if [ -f "$KERNEL" ] ; then
 	mkdir /mnt/_kernel_update
 	mount $KERNEL_PARTITION /mnt/_kernel_update
@@ -73,7 +75,8 @@ if [ -f "$ROOTFS" ] ; then
 		fi
 
 		if [ "$SHA1" != "`cat rootfs_sha1.txt`" ] ; then
-			dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
+			DIALOGRC="/tmp/dialog_err.rc" \
+				dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
 			exit 1
 		fi
 	fi
@@ -87,7 +90,8 @@ if [ -f "$ROOTFS" ] ; then
 	fi
 
 	if [ $? -ne 0 ] ; then
-		dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
 		rm /boot/update_rootfs.bin
 		exit 1
 	fi
@@ -112,7 +116,8 @@ if [ -f "$KERNEL" ] ; then
 		fi
 
 		if [ "$SHA1" != "`cat kernel_sha1.txt`" ] ; then
-			dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
+			DIALOGRC="/tmp/dialog_err.rc" \
+				dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
 			rm /boot/update_r.bin
 			exit 1
 		fi
@@ -130,7 +135,8 @@ if [ -f "$KERNEL" ] ; then
 	fi
 
 	if [ $? -ne 0 ] ; then
-		dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		rm /boot/update_r.bin
 		rm /mnt/_kernel_update/update_kernel.bin
 		umount /mnt/_kernel_update
