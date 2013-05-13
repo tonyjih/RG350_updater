@@ -15,7 +15,7 @@ for i in $BOOTLOADER_VARIANTS ; do
 		cp "$BOOT" "output/ubiboot-$i.bin"
 	else
 		BOOTLOADERS=""
-		rm output/ubiboot-*.bin
+		rm -f output/ubiboot-*.bin
 		break
 	fi
 done
