@@ -81,7 +81,7 @@ fi
 BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
 if [ -f "$BOOTLOADER" ] ; then
-	if [ -f "ubiboot-$HWVARIANT-sha1.txt" ] ; then
+	if [ -f "$BOOTLOADER.sha1" ] ; then
 		echo 'Verifying updated bootloader for corruption...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
@@ -89,7 +89,7 @@ if [ -f "$BOOTLOADER" ] ; then
 			SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
 		fi
 
-		if [ "$SHA1" != "`cat ubiboot-$HWVARIANT-sha1.txt`" ] ; then
+		if [ "$SHA1" != "`cat $BOOTLOADER.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
 			exit 1
@@ -105,7 +105,7 @@ if [ -f "$BOOTLOADER" ] ; then
 fi
 
 if [ -f "$ROOTFS" ] ; then
-	if [ -f "rootfs_sha1.txt" ] ; then
+	if [ -f "$ROOTFS.sha1" ] ; then
 		echo 'Verifying updated root filesystem for corruption...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS" | sha1sum | cut -d' ' -f1`
@@ -113,7 +113,7 @@ if [ -f "$ROOTFS" ] ; then
 			SHA1=`sha1sum "$ROOTFS" | cut -d' ' -f1`
 		fi
 
-		if [ "$SHA1" != "`cat rootfs_sha1.txt`" ] ; then
+		if [ "$SHA1" != "`cat $ROOTFS.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
 			exit 1
@@ -146,7 +146,7 @@ if [ -f "$ROOTFS" ] ; then
 fi
 
 if [ -f "$KERNEL" ] ; then
-	if [ -f "kernel_sha1.txt" ] ; then
+	if [ -f "$KERNEL.sha1" ] ; then
 		echo 'Verifying updated kernel for corruption...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL" | sha1sum | cut -d' ' -f1`
@@ -154,7 +154,7 @@ if [ -f "$KERNEL" ] ; then
 			SHA1=`sha1sum "$KERNEL" | cut -d' ' -f1`
 		fi
 
-		if [ "$SHA1" != "`cat kernel_sha1.txt`" ] ; then
+		if [ "$SHA1" != "`cat $KERNEL.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
 			rm /boot/update_r.bin

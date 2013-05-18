@@ -84,10 +84,10 @@ if [ -e "$KERNEL" ] ; then
 	chmod a-x "$KERNEL"
 
 	echo -n "Calculating SHA1 sum of kernel... "
-	sha1sum "$KERNEL" | cut -d' ' -f1 > "output/kernel_sha1.txt"
+	sha1sum "$KERNEL" | cut -d' ' -f1 > "output/vmlinuz.bin.sha1"
 	echo "done"
 
-	KERNEL="$KERNEL output/kernel_sha1.txt"
+	KERNEL="$KERNEL output/vmlinuz.bin.sha1"
 fi
 
 if [ -e "$ROOTFS" ] ; then
@@ -95,10 +95,10 @@ if [ -e "$ROOTFS" ] ; then
 	ROOTFS="output/rootfs.squashfs"
 
 	echo -n "Calculating SHA1 sum of rootfs... "
-	sha1sum "$ROOTFS" | cut -d' ' -f1 > "output/rootfs_sha1.txt"
+	sha1sum "$ROOTFS" | cut -d' ' -f1 > "output/rootfs.squashfs.sha1"
 	echo "done"
 
-	ROOTFS="$ROOTFS output/rootfs_sha1.txt"
+	ROOTFS="$ROOTFS output/rootfs.squashfs.sha1"
 fi
 
 if [ "$BOOTLOADERS" ] ; then
@@ -108,7 +108,7 @@ if [ "$BOOTLOADERS" ] ; then
 
 	for i in $BOOTLOADER_VARIANTS ; do
 		BOOT="output/ubiboot-$i.bin"
-		SHA1="output/ubiboot-$i-sha1.txt"
+		SHA1="output/ubiboot-$i.bin.sha1"
 		BOOTLOADERS="$BOOTLOADERS $BOOT $SHA1"
 
 		sha1sum "$BOOT" | cut -d' ' -f1 > "$SHA1"
