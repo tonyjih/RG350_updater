@@ -97,8 +97,7 @@ if [ -f "$BOOTLOADER" ] ; then
 	fi
 
 	echo -n 'Installing updated boot loader... '
-	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc
-	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=17 count=16 conv=notrunc
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc 2>/dev/null
 	sync
 	echo 'done'
 	echo ''
