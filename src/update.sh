@@ -191,6 +191,11 @@ if [ -f "$ROOTFS" ] ; then
 	# Synchronize the dates
 	touch -d "`date -r "$ROOTFS" +'%F %T'`" "$ROOTFS_TMP_DEST"
 
+	if [ -f "$ROOTFS.sha1" ] ; then
+		cp "$ROOTFS.sha1" "$ROOTFS_DEST.bin"
+		sync
+	fi
+
 	mv "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
 	sync
 fi
@@ -203,6 +208,11 @@ if [ -f "$KERNEL" ] ; then
 	# so that no matter what, we'll still have a working kernel installed.
 	if [ -z `cat /proc/cmdline |grep kernel_bak` ] ; then
 		cp "$KERNEL_DEST" "$KERNEL_BACKUP"
+	fi
+
+	if [ -f "$KERNEL.sha1" ] ; then
+		cp "$KERNEL.sha1" "$KERNEL_DEST.bin"
+		sync
 	fi
 
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
