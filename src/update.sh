@@ -6,6 +6,26 @@ KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
+KERNEL_PARTITION=/dev/mmcblk0p1
+KERNEL_MOUNTPOINT=/mnt/_kernel_update
+KERNEL_TMP_DEST=$KERNEL_MOUNTPOINT/kernel_update.bin
+KERNEL_DEST=$KERNEL_MOUNTPOINT/vmlinuz.bin
+KERNEL_BACKUP=$KERNEL_MOUNTPOINT/vmlinuz.bak
+
+ROOTFS_MOUNTPOINT=/boot
+ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
+ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
+ROOTFS_BACKUP=$ROOTFS_MOUNTPOINT/rootfs.bin.old
+
+error_quit() {
+	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
+	if [ -d "$KERNEL_MOUNTPOINT" ] ; then
+		umount "$KERNEL_MOUNTPOINT" 2>/dev/null
+		rmdir "$KERNEL_MOUNTPOINT"
+	fi
+	exit 1
+}
+
 DISCLAIMER="\Zb\Z3NOTICE\Zn
 
 While we carefully constructed this updater,
@@ -16,8 +36,6 @@ personal data on your GCW Zero before you
 perform the update.
 
 Do you want to update now?"
-
-KERNEL_PARTITION=/dev/mmcblk0p1
 
 UP_TO_DATE=no
 BAR=`which bar`
@@ -30,14 +48,11 @@ fi
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
 if [ -f "$KERNEL" ] ; then
-	mkdir /mnt/_kernel_update
-	mount $KERNEL_PARTITION /mnt/_kernel_update
+	mkdir "$KERNEL_MOUNTPOINT"
+	mount "$KERNEL_PARTITION" "$KERNEL_MOUNTPOINT"
 
-	DATE_OLD=`date -r /mnt/_kernel_update/vmlinuz.bin`
+	DATE_OLD=`date -r "$KERNEL_DEST"`
 	DATE_NEW=`date -r "$KERNEL"`
-
-	umount /mnt/_kernel_update
-	rmdir /mnt/_kernel_update
 
 	if [ "$DATE_OLD" = "$DATE_NEW" ] ; then
 		UP_TO_DATE=yes
@@ -45,7 +60,7 @@ if [ -f "$KERNEL" ] ; then
 fi
 
 if [ -f "$ROOTFS" -a "$UP_TO_DATE" = "yes" ] ; then
-	DATE_OLD=`date -r /boot/rootfs.bin`
+	DATE_OLD=`date -r "$ROOTFS_MOUNTPOINT/rootfs.bin"`
 	DATE_NEW=`date -r "$ROOTFS"`
 
 	if [ "$DATE_OLD" != "$DATE_NEW" ] ; then
@@ -57,13 +72,13 @@ if [ "$UP_TO_DATE" = "yes" ] ; then
 	dialog --defaultno --yesno 'The system seems to be already up to date.\n\n
 Do you really want to continue?' 10 30
 	if [ $? -ne 0 ] ; then
-		exit
+		error_quit
 	fi
 fi
 
 dialog --defaultno --yes-label 'Update' --no-label 'Cancel' --yesno "$DISCLAIMER" 15 48
 if [ $? -eq 1 ] ; then
-	exit
+	error_quit
 fi
 
 clear
@@ -92,7 +107,7 @@ if [ -f "$BOOTLOADER" ] ; then
 		if [ "$SHA1" != "`cat $BOOTLOADER.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
-			exit 1
+			error_quit
 		fi
 	fi
 
@@ -115,30 +130,29 @@ if [ -f "$ROOTFS" ] ; then
 		if [ "$SHA1" != "`cat $ROOTFS.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
-			exit 1
+			error_quit
 		fi
 	fi
 
 	echo 'Installing updated root filesystem... '
 
 	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o /boot/update_rootfs.bin "$ROOTFS"
+		$BAR -w 54 -0 ' ' -n -o "$ROOTFS_TMP_DEST" "$ROOTFS"
 	else
-		cp "$ROOTFS" /boot/update_rootfs.bin
+		cp "$ROOTFS" "$ROOTFS_TMP_DEST"
 	fi
 
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
-		rm /boot/update_rootfs.bin
-		exit 1
+		error_quit
 	fi
 
 	# Synchronize the dates
-	touch -d "`date -r "$ROOTFS" +'%F %T'`" /boot/update_rootfs.bin
+	touch -d "`date -r "$ROOTFS" +'%F %T'`" "$ROOTFS_TMP_DEST"
 
 	sync
-	mv /boot/update_rootfs.bin /boot/update_r.bin
+	mv "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
 	sync
 	echo 'done.'
 	echo
@@ -156,46 +170,41 @@ if [ -f "$KERNEL" ] ; then
 		if [ "$SHA1" != "`cat $KERNEL.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
-			rm /boot/update_r.bin
-			exit 1
+			error_quit
 		fi
 	fi
 
 	echo 'Installing updated kernel... '
 
-	mkdir /mnt/_kernel_update
-	mount $KERNEL_PARTITION /mnt/_kernel_update
+	mkdir "$KERNEL_MOUNTPOINT"
+	mount "$KERNEL_PARTITION" "$KERNEL_MOUNTPOINT"
 
 	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o /mnt/_kernel_update/update_kernel.bin "$KERNEL"
+		$BAR -w 54 -0 ' ' -n -o "$KERNEL_TMP_DEST" "$KERNEL"
 	else
-		cp "$KERNEL" /mnt/_kernel_update/update_kernel.bin
+		cp "$KERNEL" "$KERNEL_TMP_DEST"
 	fi
 
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
-		rm /boot/update_r.bin
-		rm /mnt/_kernel_update/update_kernel.bin
-		umount /mnt/_kernel_update
-		rmdir /mnt/_kernel_update
-		exit 1
+		error_quit
 	fi
 
 	# Synchronize the dates
-	touch -d "`date -r "$KERNEL" +'%F %T'`" /mnt/_kernel_update/update_kernel.bin
+	touch -d "`date -r "$KERNEL" +'%F %T'`" "$KERNEL_TMP_DEST"
 
 	sync
 
 	# Don't create a backup if we are already running from the backup kernel,
 	# so that no matter what, we'll still have a working kernel installed.
 	if [ -z `cat /proc/cmdline |grep kernel_bak` ] ; then
-		cp /mnt/_kernel_update/vmlinuz.bin /mnt/_kernel_update/vmlinuz.bak
+		cp "$KERNEL_DEST" "$KERNEL_BACKUP"
 	fi
 
-	mv /mnt/_kernel_update/update_kernel.bin /mnt/_kernel_update/vmlinuz.bin
-	umount /mnt/_kernel_update
-	rmdir /mnt/_kernel_update
+	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
+	umount "$KERNEL_MOUNTPOINT"
+	rmdir "$KERNEL_MOUNTPOINT"
 	echo 'done.'
 	echo
 fi
