@@ -1,3 +1,4 @@
 output/
 rootfs.squashfs
 vmlinuz.bin
+ubiboot-*.bin
