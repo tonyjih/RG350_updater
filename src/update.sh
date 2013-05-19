@@ -137,9 +137,9 @@ if [ -f "$ROOTFS" ] ; then
 	if [ -f "$ROOTFS.sha1" ] ; then
 		echo 'Verifying updated root filesystem for corruption...'
 		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS" | sha1sum | cut -d' ' -f1`
+			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		else
-			SHA1=`sha1sum "$ROOTFS" | cut -d' ' -f1`
+			SHA1=`sha1sum "$ROOTFS_TMP_DEST" | cut -d' ' -f1`
 		fi
 
 		if [ "$SHA1" != "`cat $ROOTFS.sha1`" ] ; then
@@ -154,9 +154,9 @@ if [ -f "$KERNEL" ] ; then
 	if [ -f "$KERNEL.sha1" ] ; then
 		echo 'Verifying updated kernel for corruption...'
 		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL" | sha1sum | cut -d' ' -f1`
+			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		else
-			SHA1=`sha1sum "$KERNEL" | cut -d' ' -f1`
+			SHA1=`sha1sum "$KERNEL_TMP_DEST" | cut -d' ' -f1`
 		fi
 
 		if [ "$SHA1" != "`cat $KERNEL.sha1`" ] ; then
