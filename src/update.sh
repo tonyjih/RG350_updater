@@ -95,28 +95,43 @@ fi
 
 BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
-if [ -f "$BOOTLOADER" ] ; then
-	if [ -f "$BOOTLOADER.sha1" ] ; then
-		echo 'Verifying updated bootloader for corruption...'
-		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
-		else
-			SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
-		fi
+if [ -f "$ROOTFS" ] ; then
+	echo 'Installing updated root filesystem... '
 
-		if [ "$SHA1" != "`cat $BOOTLOADER.sha1`" ] ; then
-			DIALOGRC="/tmp/dialog_err.rc" \
-				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
-			error_quit
-		fi
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o "$ROOTFS_TMP_DEST" "$ROOTFS"
+	else
+		cp "$ROOTFS" "$ROOTFS_TMP_DEST"
 	fi
 
-	echo -n 'Installing updated boot loader... '
-	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc 2>/dev/null
+	if [ $? -ne 0 ] ; then
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
+		error_quit
+	fi
+
 	sync
-	echo 'done'
-	echo ''
 fi
+
+if [ -f "$KERNEL" ] ; then
+	echo 'Installing updated kernel... '
+
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o "$KERNEL_TMP_DEST" "$KERNEL"
+	else
+		cp "$KERNEL" "$KERNEL_TMP_DEST"
+	fi
+
+	if [ $? -ne 0 ] ; then
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
+		error_quit
+	fi
+
+	sync
+fi
+
+echo ''
 
 if [ -f "$ROOTFS" ] ; then
 	if [ -f "$ROOTFS.sha1" ] ; then
@@ -133,29 +148,6 @@ if [ -f "$ROOTFS" ] ; then
 			error_quit
 		fi
 	fi
-
-	echo 'Installing updated root filesystem... '
-
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$ROOTFS_TMP_DEST" "$ROOTFS"
-	else
-		cp "$ROOTFS" "$ROOTFS_TMP_DEST"
-	fi
-
-	if [ $? -ne 0 ] ; then
-		DIALOGRC="/tmp/dialog_err.rc" \
-			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
-		error_quit
-	fi
-
-	# Synchronize the dates
-	touch -d "`date -r "$ROOTFS" +'%F %T'`" "$ROOTFS_TMP_DEST"
-
-	sync
-	mv "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
-	sync
-	echo 'done.'
-	echo
 fi
 
 if [ -f "$KERNEL" ] ; then
@@ -173,28 +165,39 @@ if [ -f "$KERNEL" ] ; then
 			error_quit
 		fi
 	fi
+fi
 
-	echo 'Installing updated kernel... '
+if [ -f "$BOOTLOADER" ] ; then
+	if [ -f "$BOOTLOADER.sha1" ] ; then
+		echo 'Verifying updated bootloader for corruption...'
+		if [ "$BAR" ] ; then
+			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
+		else
+			SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
+		fi
 
-	mkdir "$KERNEL_MOUNTPOINT"
-	mount "$KERNEL_PARTITION" "$KERNEL_MOUNTPOINT"
-
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$KERNEL_TMP_DEST" "$KERNEL"
-	else
-		cp "$KERNEL" "$KERNEL_TMP_DEST"
+		if [ "$SHA1" != "`cat $BOOTLOADER.sha1`" ] ; then
+			DIALOGRC="/tmp/dialog_err.rc" \
+				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
+			error_quit
+		fi
 	fi
+fi
 
-	if [ $? -ne 0 ] ; then
-		DIALOGRC="/tmp/dialog_err.rc" \
-			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
-		error_quit
-	fi
+echo ''
+echo 'Commiting changes. Please wait...'
 
+if [ -f "$ROOTFS" ] ; then
+	# Synchronize the dates
+	touch -d "`date -r "$ROOTFS" +'%F %T'`" "$ROOTFS_TMP_DEST"
+
+	mv "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
+	sync
+fi
+
+if [ -f "$KERNEL" ] ; then
 	# Synchronize the dates
 	touch -d "`date -r "$KERNEL" +'%F %T'`" "$KERNEL_TMP_DEST"
-
-	sync
 
 	# Don't create a backup if we are already running from the backup kernel,
 	# so that no matter what, we'll still have a working kernel installed.
@@ -205,8 +208,11 @@ if [ -f "$KERNEL" ] ; then
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
 	umount "$KERNEL_MOUNTPOINT"
 	rmdir "$KERNEL_MOUNTPOINT"
-	echo 'done.'
-	echo
+fi
+
+if [ -f "$BOOTLOADER" ] ; then
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 count=16 conv=notrunc 2>/dev/null
+	sync
 fi
 
 dialog --msgbox 'Update complete!\nThe system will now restart.\n\n
