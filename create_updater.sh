@@ -6,7 +6,7 @@ umask 0022
 rm -rf output
 mkdir output
 
-BOOTLOADER_VARIANTS="v11_ddr2_256mb v11_ddr2_512mb v20_mddr_512mb"
+BOOTLOADER_VARIANTS="v11_ddr2_256mb v20_mddr_512mb"
 
 for i in $BOOTLOADER_VARIANTS ; do
 	if [ -e "ubiboot-$i.bin" ] ; then
