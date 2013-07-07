@@ -138,7 +138,7 @@ echo 3 > /proc/sys/vm/drop_caches
 
 if [ -f "$ROOTFS" ] ; then
 	if [ -f "$ROOTFS.sha1" ] ; then
-		echo 'Verifying updated root filesystem for corruption...'
+		echo 'Verifying checksum of updated root filesystem...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		else
@@ -155,7 +155,7 @@ fi
 
 if [ -f "$KERNEL" ] ; then
 	if [ -f "$KERNEL.sha1" ] ; then
-		echo 'Verifying updated kernel for corruption...'
+		echo 'Verifying checksum of updated kernel...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		else
@@ -172,7 +172,7 @@ fi
 
 if [ -f "$BOOTLOADER" ] ; then
 	if [ -f "$BOOTLOADER.sha1" ] ; then
-		echo 'Verifying updated bootloader for corruption...'
+		echo 'Verifying checksum of updated bootloader...'
 		if [ "$BAR" ] ; then
 			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
 		else
