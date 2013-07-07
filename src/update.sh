@@ -219,6 +219,7 @@ if [ -f "$KERNEL" ] ; then
 	fi
 
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
+	sync
 	umount "$SYSTEM_MOUNTPOINT"
 	rmdir "$SYSTEM_MOUNTPOINT"
 fi
