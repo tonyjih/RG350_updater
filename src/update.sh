@@ -133,6 +133,9 @@ fi
 
 echo ''
 
+# Make sure that the verification steps use data from disk, not cached data.
+echo 3 > /proc/sys/vm/drop_caches
+
 if [ -f "$ROOTFS" ] ; then
 	if [ -f "$ROOTFS.sha1" ] ; then
 		echo 'Verifying updated root filesystem for corruption...'
