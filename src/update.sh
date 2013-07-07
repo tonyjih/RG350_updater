@@ -6,11 +6,11 @@ KERNEL=./vmlinuz.bin
 ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
-KERNEL_PARTITION=/dev/mmcblk0p1
-KERNEL_MOUNTPOINT=/mnt/_kernel_update
-KERNEL_TMP_DEST=$KERNEL_MOUNTPOINT/kernel_update.bin
-KERNEL_DEST=$KERNEL_MOUNTPOINT/vmlinuz.bin
-KERNEL_BACKUP=$KERNEL_MOUNTPOINT/vmlinuz.bak
+SYSTEM_PARTITION=/dev/mmcblk0p1
+SYSTEM_MOUNTPOINT=/mnt/_kernel_update
+KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/kernel_update.bin
+KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
+KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 
 ROOTFS_MOUNTPOINT=/boot
 ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
@@ -19,9 +19,9 @@ ROOTFS_BACKUP=$ROOTFS_MOUNTPOINT/rootfs.bin.old
 
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
-	if [ -d "$KERNEL_MOUNTPOINT" ] ; then
-		umount "$KERNEL_MOUNTPOINT" 2>/dev/null
-		rmdir "$KERNEL_MOUNTPOINT"
+	if [ -d "$SYSTEM_MOUNTPOINT" ] ; then
+		umount "$SYSTEM_MOUNTPOINT" 2>/dev/null
+		rmdir "$SYSTEM_MOUNTPOINT"
 	fi
 	exit 1
 }
@@ -48,8 +48,8 @@ fi
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
 if [ -f "$KERNEL" ] ; then
-	mkdir "$KERNEL_MOUNTPOINT"
-	mount "$KERNEL_PARTITION" "$KERNEL_MOUNTPOINT"
+	mkdir "$SYSTEM_MOUNTPOINT"
+	mount "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
 
 	DATE_OLD=`date -r "$KERNEL_DEST"`
 	DATE_NEW=`date -r "$KERNEL"`
@@ -216,8 +216,8 @@ if [ -f "$KERNEL" ] ; then
 	fi
 
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
-	umount "$KERNEL_MOUNTPOINT"
-	rmdir "$KERNEL_MOUNTPOINT"
+	umount "$SYSTEM_MOUNTPOINT"
+	rmdir "$SYSTEM_MOUNTPOINT"
 fi
 
 if [ -f "$BOOTLOADER" ] ; then
