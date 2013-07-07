@@ -110,6 +110,7 @@ if [ -f "$ROOTFS" ] ; then
 		error_quit
 	fi
 
+	echo 'Flushing write cache... '
 	sync
 fi
 
@@ -128,6 +129,7 @@ if [ -f "$KERNEL" ] ; then
 		error_quit
 	fi
 
+	echo 'Flushing write cache... '
 	sync
 fi
 
