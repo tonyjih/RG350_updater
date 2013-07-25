@@ -15,7 +15,6 @@ KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 ROOTFS_MOUNTPOINT=/boot
 ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
 ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
-ROOTFS_BACKUP=$ROOTFS_MOUNTPOINT/rootfs.bin.old
 
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
@@ -197,7 +196,7 @@ if [ -f "$ROOTFS" ] ; then
 	touch -d "`date -r "$ROOTFS" +'%F %T'`" "$ROOTFS_TMP_DEST"
 
 	if [ -f "$ROOTFS.sha1" ] ; then
-		cp "$ROOTFS.sha1" "$ROOTFS_DEST.bin"
+		cp "$ROOTFS.sha1" "$ROOTFS_DEST.sha1"
 		sync
 	fi
 
@@ -216,7 +215,7 @@ if [ -f "$KERNEL" ] ; then
 	fi
 
 	if [ -f "$KERNEL.sha1" ] ; then
-		cp "$KERNEL.sha1" "$KERNEL_DEST.bin"
+		cp "$KERNEL.sha1" "$KERNEL_DEST.sha1"
 		sync
 	fi
 
