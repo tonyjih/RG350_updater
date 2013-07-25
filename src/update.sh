@@ -212,6 +212,7 @@ if [ -f "$KERNEL" ] ; then
 	# so that no matter what, we'll still have a working kernel installed.
 	if [ -z `cat /proc/cmdline |grep kernel_bak` ] ; then
 		cp "$KERNEL_DEST" "$KERNEL_BACKUP"
+		cp "$KERNEL_DEST.sha1" "$KERNEL_BACKUP.sha1"
 	fi
 
 	if [ -f "$KERNEL.sha1" ] ; then
