@@ -15,6 +15,7 @@ KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 ROOTFS_MOUNTPOINT=/boot
 ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
 ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
+ROOTFS_CURRENT=$ROOTFS_MOUNTPOINT/rootfs.bin
 
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
@@ -36,7 +37,7 @@ perform the update.
 
 Do you want to update now?"
 
-UP_TO_DATE=no
+UP_TO_DATE=yes
 BAR=`which bar`
 
 if [ -f "$DATE_FILE" ] ; then
@@ -46,25 +47,25 @@ fi
 
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
-if [ -f "$KERNEL" ] ; then
+if [ -f "$KERNEL" -a -f "$KERNEL.sha1" ] ; then
 	mkdir "$SYSTEM_MOUNTPOINT"
 	mount "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
 
-	DATE_OLD=`date -r "$KERNEL_DEST"`
-	DATE_NEW=`date -r "$KERNEL"`
-
-	if [ "$DATE_OLD" = "$DATE_NEW" ] ; then
-		UP_TO_DATE=yes
+	if [ -f "$KERNEL_DEST.sha1" ] ; then
+		SHA1_OLD=`cat "$KERNEL_DEST.sha1"`
+		SHA1_NEW=`cat "$KERNEL.sha1"`
+		if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
+			UP_TO_DATE=no
+		fi
 	fi
 fi
 
-if [ -f "$ROOTFS" -a "$UP_TO_DATE" = "yes" ] ; then
-	DATE_OLD=`date -r "$ROOTFS_MOUNTPOINT/rootfs.bin"`
-	DATE_NEW=`date -r "$ROOTFS"`
-
-	if [ "$DATE_OLD" != "$DATE_NEW" ] ; then
-		UP_TO_DATE=no
-	fi
+if [ -f "$ROOTFS" -a -f "$ROOTFS.sha1" -a "$UP_TO_DATE" = "yes" ] ; then
+		SHA1_OLD=`cat "$ROOTFS_CURRENT.sha1"`
+		SHA1_NEW=`cat "$ROOTFS.sha1"`
+		if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
+			UP_TO_DATE=no
+		fi
 fi
 
 if [ "$UP_TO_DATE" = "yes" ] ; then
