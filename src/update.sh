@@ -14,8 +14,17 @@ KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 
 ROOTFS_MOUNTPOINT=/boot
 ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
-ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
 ROOTFS_CURRENT=$ROOTFS_MOUNTPOINT/rootfs.bin
+
+if [ `cat /proc/cmdline |grep rootfs_bak` ] ; then
+	# If we're running the backup rootfs, we can overwrite the
+	# regular rootfs without problem
+	ROOTFS_DEST=$ROOTFS_CURRENT
+else
+	# Otherwise, the regular rootfs is currently mounted, so we
+	# cannot overwrite it; we let min-init (in initramfs) do the switch
+	ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
+fi
 
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
