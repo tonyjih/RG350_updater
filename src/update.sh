@@ -199,7 +199,7 @@ if [ -f "$BOOTLOADER" ] ; then
 fi
 
 echo ''
-echo 'Commiting changes. Please wait...'
+echo 'Committing changes. Please wait...'
 
 if [ -f "$ROOTFS" ] ; then
 	# Synchronize the dates
