@@ -61,7 +61,6 @@ echo
 cat > output/default.gcw0.desktop <<EOF
 [Desktop Entry]
 Name=OS Update
-Version=$DATE
 Comment=OpenDingux Update $DATE
 Exec=update.sh
 Icon=opendingux
