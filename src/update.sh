@@ -7,14 +7,13 @@ ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
 SYSTEM_PARTITION=/dev/mmcblk0p1
-SYSTEM_MOUNTPOINT=/mnt/_kernel_update
+SYSTEM_MOUNTPOINT=/boot
 KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/kernel_update.bin
 KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
 KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 
-ROOTFS_MOUNTPOINT=/boot
-ROOTFS_TMP_DEST=$ROOTFS_MOUNTPOINT/update_rootfs.bin
-ROOTFS_CURRENT=$ROOTFS_MOUNTPOINT/rootfs.bin
+ROOTFS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_rootfs.bin
+ROOTFS_CURRENT=$SYSTEM_MOUNTPOINT/rootfs.squashfs
 
 if [ `cat /proc/cmdline |grep rootfs_bak` ] ; then
 	# If we're running the backup rootfs, we can overwrite the
@@ -23,15 +22,12 @@ if [ `cat /proc/cmdline |grep rootfs_bak` ] ; then
 else
 	# Otherwise, the regular rootfs is currently mounted, so we
 	# cannot overwrite it; we let min-init (in initramfs) do the switch
-	ROOTFS_DEST=$ROOTFS_MOUNTPOINT/update_r.bin
+	ROOTFS_DEST=$SYSTEM_MOUNTPOINT/update_r.bin
 fi
 
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
-	if [ -d "$SYSTEM_MOUNTPOINT" ] ; then
-		umount "$SYSTEM_MOUNTPOINT" 2>/dev/null
-		rmdir "$SYSTEM_MOUNTPOINT"
-	fi
+	mount -o remount,ro "$SYSTEM_MOUNTPOINT"
 	exit 1
 }
 
@@ -57,9 +53,6 @@ fi
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
 if [ -f "$KERNEL" -a -f "$KERNEL.sha1" ] ; then
-	mkdir "$SYSTEM_MOUNTPOINT"
-	mount "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
-
 	if [ -f "$KERNEL_DEST.sha1" ] ; then
 		SHA1_OLD=`cat "$KERNEL_DEST.sha1"`
 		SHA1_NEW=`cat "$KERNEL.sha1"`
@@ -104,6 +97,8 @@ fi
 
 BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
+mount -o remount,rw "$SYSTEM_MOUNTPOINT"
+
 if [ -f "$ROOTFS" ] ; then
 	echo 'Installing updated root filesystem... '
 
@@ -118,9 +113,6 @@ if [ -f "$ROOTFS" ] ; then
 			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
 		error_quit
 	fi
-
-	echo 'Flushing write cache... '
-	sync
 fi
 
 if [ -f "$KERNEL" ] ; then
@@ -137,11 +129,10 @@ if [ -f "$KERNEL" ] ; then
 			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		error_quit
 	fi
-
-	echo 'Flushing write cache... '
-	sync
 fi
 
+echo 'Flushing write cache... '
+sync
 echo ''
 
 # Make sure that the verification steps use data from disk, not cached data.
@@ -232,8 +223,6 @@ if [ -f "$KERNEL" ] ; then
 
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
 	sync
-	umount "$SYSTEM_MOUNTPOINT"
-	rmdir "$SYSTEM_MOUNTPOINT"
 fi
 
 if [ -f "$BOOTLOADER" ] ; then
