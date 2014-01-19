@@ -8,8 +8,8 @@ ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
 SYSTEM_PARTITION=/dev/mmcblk0p1
-SYSTEM_MOUNTPOINT=/boot
-KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/kernel_update.bin
+SYSTEM_MOUNTPOINT=/mnt/_system_update
+KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/update_kernel.bin
 KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
 KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 
@@ -34,7 +34,10 @@ error_quit() {
 	rm -f "$KERNEL_TMP_DEST" \
 		"$ROOTFS_TMP_DEST" "$ROOTFS_DEST" "${ROOTFS_DEST}.sha1" \
 		"$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST" "${MODULES_FS_DEST}.sha1"
+
+	# Forces other mount points to be read-only before unmounting
 	mount -o remount,ro "$SYSTEM_MOUNTPOINT"
+	umount "$SYSTEM_MOUNTPOINT"
 	exit 1
 }
 
@@ -110,6 +113,10 @@ fi
 
 BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
+# Linux will refuse to mount read-write if other mount points are read-only,
+# so we mount read-only first and remount read-write after
+mkdir -p "$SYSTEM_MOUNTPOINT"
+mount -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
 mount -o remount,rw "$SYSTEM_MOUNTPOINT"
 
 if [ -f "$ROOTFS" ] ; then
