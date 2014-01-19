@@ -3,6 +3,7 @@
 cd `dirname $0`
 
 KERNEL=./vmlinuz.bin
+MODULES_FS=./modules.squashfs
 ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
@@ -15,6 +16,10 @@ KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 ROOTFS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_rootfs.bin
 ROOTFS_CURRENT=$SYSTEM_MOUNTPOINT/rootfs.squashfs
 
+MODULES_FS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_modules.bin
+MODULES_FS_DEST=$SYSTEM_MOUNTPOINT/update_m.bin
+MODULES_FS_CURRENT=$SYSTEM_MOUNTPOINT/modules.squashfs
+
 if [ `cat /proc/cmdline |grep rootfs_bak` ] ; then
 	# If we're running the backup rootfs, we can overwrite the
 	# regular rootfs without problem
@@ -26,7 +31,9 @@ else
 fi
 
 error_quit() {
-	rm -f "$KERNEL_TMP_DEST" "$ROOTFS_TMP_DEST" "$ROOTFS_DEST"
+	rm -f "$KERNEL_TMP_DEST" \
+		"$ROOTFS_TMP_DEST" "$ROOTFS_DEST" "${ROOTFS_DEST}.sha1" \
+		"$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST" "${MODULES_FS_DEST}.sha1"
 	mount -o remount,ro "$SYSTEM_MOUNTPOINT"
 	exit 1
 }
@@ -52,22 +59,28 @@ fi
 
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
-if [ -f "$KERNEL" -a -f "$KERNEL.sha1" ] ; then
-	if [ -f "$KERNEL_DEST.sha1" ] ; then
-		SHA1_OLD=`cat "$KERNEL_DEST.sha1"`
-		SHA1_NEW=`cat "$KERNEL.sha1"`
-		if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
-			UP_TO_DATE=no
-		fi
+if [ -f "$KERNEL" -a -f "$KERNEL.sha1" -a -f "$KERNEL_DEST.sha1" ] ; then
+	SHA1_OLD=`cat "$KERNEL_DEST.sha1"`
+	SHA1_NEW=`cat "$KERNEL.sha1"`
+	if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
+		UP_TO_DATE=no
+	fi
+fi
+
+if [ -f "$MODULES_FS" -a -f "$MODULES_FS.sha1" -a -f "$MODULES_FS_CURRENT.sha1" ] ; then
+	SHA1_OLD=`cat "$MODULES_FS_CURRENT.sha1"`
+	SHA1_NEW=`cat "$MODULES_FS.sha1"`
+	if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
+		UP_TO_DATE=no
 	fi
 fi
 
 if [ -f "$ROOTFS" -a -f "$ROOTFS.sha1" -a "$UP_TO_DATE" = "yes" ] ; then
-		SHA1_OLD=`cat "$ROOTFS_CURRENT.sha1"`
-		SHA1_NEW=`cat "$ROOTFS.sha1"`
-		if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
-			UP_TO_DATE=no
-		fi
+	SHA1_OLD=`cat "$ROOTFS_CURRENT.sha1"`
+	SHA1_NEW=`cat "$ROOTFS.sha1"`
+	if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
+		UP_TO_DATE=no
+	fi
 fi
 
 if [ "$UP_TO_DATE" = "yes" ] ; then
@@ -129,6 +142,20 @@ if [ -f "$KERNEL" ] ; then
 			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		error_quit
 	fi
+
+	echo 'Installing updated modules filesystem... '
+
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o "$MODULES_FS_TMP_DEST" "$MODULES_FS"
+	else
+		cp "$MODULES_FS" "$MODULES_FS_TMP_DEST"
+	fi
+
+	if [ $? -ne 0 ] ; then
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update modules filesystem.' 8 34
+		error_quit
+	fi
 fi
 
 echo 'Flushing write cache... '
@@ -167,6 +194,21 @@ if [ -f "$KERNEL" ] ; then
 		if [ "$SHA1" != "`cat $KERNEL.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
+			error_quit
+		fi
+	fi
+
+	if [ -f "$MODULES_FS.sha1" ] ; then
+		echo 'Verifying checksum of updated modules filesystem...'
+		if [ "$BAR" ] ; then
+			SHA1=`$BAR -w 54 -0 ' ' -n "$MODULES_FS_TMP_DEST" | sha1sum | cut -d' ' -f1`
+		else
+			SHA1=`sha1sum "$MODULES_FS_TMP_DEST" | cut -d' ' -f1`
+		fi
+
+		if [ "$SHA1" != "`cat $MODULES_FS.sha1`" ] ; then
+			DIALOGRC="/tmp/dialog_err.rc" \
+				dialog --msgbox 'ERROR!\n\nUpdated modules filesystem is corrupted!' 9 34
 			error_quit
 		fi
 	fi
@@ -209,11 +251,21 @@ if [ -f "$KERNEL" ] ; then
 	# Synchronize the dates
 	touch -d "`date -r "$KERNEL" +'%F %T'`" "$KERNEL_TMP_DEST"
 
+	# Special case when the destination modules filesystem does not exist
+	if [ ! -e "$MODULES_FS_CURRENT" ] ; then
+		MODULES_FS_DEST="$MODULES_FS_CURRENT"
+	fi
+
 	# Don't create a backup if we are already running from the backup kernel,
 	# so that no matter what, we'll still have a working kernel installed.
 	if [ -z `cat /proc/cmdline |grep kernel_bak` ] ; then
 		cp "$KERNEL_DEST" "$KERNEL_BACKUP"
 		cp "$KERNEL_DEST.sha1" "$KERNEL_BACKUP.sha1"
+		if [ -e "$MODULES_FS_DEST.sha1" ] ; then
+			cp "$MODULES_FS_DEST.sha1" "$MODULES_FS_DEST.sha1.bak"
+		fi
+	else
+		MODULES_FS_DEST="$MODULES_FS_CURRENT"
 	fi
 
 	if [ -f "$KERNEL.sha1" ] ; then
@@ -221,6 +273,12 @@ if [ -f "$KERNEL" ] ; then
 		sync
 	fi
 
+	if [ -f "$MODULES_FS.sha1" ] ; then
+		cp "$MODULES_FS.sha1" "$MODULES_FS_DEST.sha1"
+		sync
+	fi
+
+	mv "$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST"
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
 	sync
 fi

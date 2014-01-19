@@ -21,8 +21,13 @@ for i in $BOOTLOADER_VARIANTS ; do
 done
 
 # Get kernel metadata.
-if [ -e "vmlinuz.bin" ] ; then
+if [ -r "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
+	if [ ! -r "modules.squashfs" ] ; then
+		echo "ERROR: no modules.squashfs file found"
+		exit 1
+	fi
+	MODULES_FS=`realpath modules.squashfs`
 fi
 
 # Get rootfs metadata.
@@ -49,10 +54,11 @@ fi
 echo
 echo "=========================="
 echo
-echo "Bootloaders:       $BOOTLOADERS"
-echo "Kernel:            $KERNEL"
-echo "Root file system:  $ROOTFS"
-echo "  build date:      $DATE"
+echo "Bootloaders:          $BOOTLOADERS"
+echo "Kernel:               $KERNEL"
+echo "Modules file system:  $MODULES_FS"
+echo "Root file system:     $ROOTFS"
+echo "  build date:         $DATE"
 echo
 echo "=========================="
 echo
@@ -79,14 +85,20 @@ EOF
 # script expects.
 if [ -e "$KERNEL" ] ; then
 	cp -a $KERNEL output/vmlinuz.bin
+	cp -a $MODULES_FS output/modules.squashfs
 	KERNEL="output/vmlinuz.bin"
-	chmod a-x "$KERNEL"
+	MODULES_FS="output/modules.squashfs"
+	chmod a-x "$KERNEL" "$MODULES_FS"
 
 	echo -n "Calculating SHA1 sum of kernel... "
 	sha1sum "$KERNEL" | cut -d' ' -f1 > "output/vmlinuz.bin.sha1"
 	echo "done"
 
-	KERNEL="$KERNEL output/vmlinuz.bin.sha1"
+	echo -n "Calculating SHA1 sum of modules file-system... "
+	sha1sum "$MODULES_FS" | cut -d' ' -f1 > "output/modules.squashfs.sha1"
+	echo "done"
+
+	KERNEL="$KERNEL output/vmlinuz.bin.sha1 $MODULES_FS output/modules.squashfs.sha1"
 fi
 
 if [ -e "$ROOTFS" ] ; then
