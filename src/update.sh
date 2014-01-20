@@ -113,6 +113,12 @@ fi
 
 BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
+# The update will fail if /media/system is mounted,
+# so we first un-mount it
+if [ -d /media/system ] ; then
+	umount /media/system
+fi
+
 # Linux will refuse to mount read-write if other mount points are read-only,
 # so we mount read-only first and remount read-write after
 mkdir -p "$SYSTEM_MOUNTPOINT"
