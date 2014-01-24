@@ -99,6 +99,16 @@ if [ $? -eq 1 ] ; then
 	error_quit
 fi
 
+# Checks if the system partition has been resized.
+# TODO: If not, resize the partition here.
+SYSTEM_END_THEORY=819199
+SYSTEM_END=$(partx $DEVICE -n $SYSTEM_PART_NUM -g -o end)
+if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nSystem partition has not been resized.' 0 0
+	error_quit
+fi
+
 clear
 echo 'Update in progress - please be patient.'
 echo
