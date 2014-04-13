@@ -7,7 +7,9 @@ MODULES_FS=./modules.squashfs
 ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
-SYSTEM_PARTITION=/dev/mmcblk0p1
+SYSTEM_DEVICE=/dev/mmcblk0
+SYSTEM_PART_NUM=1
+SYSTEM_PARTITION=${SYSTEM_DEVICE}p${SYSTEM_PART_NUM}
 SYSTEM_MOUNTPOINT=/mnt/_system_update
 KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/update_kernel.bin
 KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
@@ -102,7 +104,7 @@ fi
 # Checks if the system partition has been resized.
 # TODO: If not, resize the partition here.
 SYSTEM_END_THEORY=819199
-SYSTEM_END=$(partx $DEVICE -n $SYSTEM_PART_NUM -g -o end)
+SYSTEM_END=$(partx $SYSTEM_DEVICE -n $SYSTEM_PART_NUM -g -o end)
 if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
 	DIALOGRC="/tmp/dialog_err.rc" \
 		dialog --msgbox 'ERROR!\n\nSystem partition has not been resized.' 0 0
