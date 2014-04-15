@@ -136,6 +136,8 @@ mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \
 	src/update.sh \
+	src/trimfat.py \
+	src/flash_partition.sh \
 	output/date.txt \
 	$BOOTLOADERS \
 	$KERNEL \
