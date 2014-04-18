@@ -10,11 +10,19 @@ ROOTFS_DEST=${SYSTEM_MOUNTPOINT}/fs/rootfs.squashfs
 MODULES_FS_DEST=${SYSTEM_MOUNTPOINT}/fs/modules.squashfs
 
 error_quit() {
-	umount ${SYSTEM_IMAGE}
+	umount ${SYSTEM_MOUNTPOINT}/fs
+	umount ${SYSTEM_MOUNTPOINT}
 	rm ${SYSTEM_IMAGE}
 	exit 1
 }
 
+if [ ! -f "$KERNEL" -o ! -f "$ROOTFS" -o ! -f "$MODULES_FS" \
+	-o ! -f "$BOOTLOADER" -o ! -f "${KERNEL}.sha1" -o ! -f "${ROOTFS}.sha1" \
+	-o ! -f "${MODULES_FS}.sha1" -o ! -f "${BOOTLOADER}.sha1" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nUnable to generate image: required files are missing.' 9 34
+	error_quit
+fi
 
 # Create a 400 MiB tmpfs. It won't be a problem even if the available
 # amount of RAM is < 400 MiB.
@@ -30,22 +38,22 @@ mkdir "${SYSTEM_MOUNTPOINT}/fs"
 mount -o loop "${SYSTEM_MOUNTPOINT}/system.bin" "${SYSTEM_MOUNTPOINT}/fs"
 
 if [ "$BAR" ] ; then
-	echo 'Copying kernel... '
+	echo 'Adding kernel to flash image...'
 	$BAR -w 54 -0 ' ' -n -o "$KERNEL_DEST" "$KERNEL"
 
-	echo 'Copying root filesystem...'
+	echo 'Adding root filesystem to flash image...'
 	$BAR -w 54 -0 ' ' -n -o "$ROOTFS_DEST" "$ROOTFS"
 
-	echo 'Copying modules filesystem...'
+	echo 'Adding modules filesystem to flash image...'
 	$BAR -w 54 -0 ' ' -n -o "$MODULES_FS_DEST" "$MODULES_FS"
 else
-	echo 'Copying kernel... '
+	echo 'Adding kernel to flash image...'
 	cp "$KERNEL" "$KERNEL_DEST"
 
-	echo 'Copying root filesystem...'
+	echo 'Adding root filesystem to flash image...'
 	cp "$ROOTFS" "$ROOTFS_DEST"
 
-	echo 'Copying modules filesystem...'
+	echo 'Adding modules filesystem to flash image...'
 	cp "$MODULES_FS" "$MODULES_FS_DEST"
 fi
 
@@ -53,36 +61,118 @@ cp "${KERNEL}.sha1" "${KERNEL_DEST}.sha1"
 cp "${ROOTFS}.sha1" "${ROOTFS_DEST}.sha1"
 cp "${MODULES_FS}.sha1" "${MODULES_FS_DEST}.sha1"
 
+echo ''
+echo 'Verifying checksum of kernel...'
+if [ "$BAR" ] ; then
+	SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL_DEST" | sha1sum | cut -d' ' -f1`
+else
+	SHA1=`sha1sum "$KERNEL_DEST" | cut -d' ' -f1`
+fi
+
+if [ "$SHA1" != "`cat ${KERNEL_DEST}.sha1`" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
+	error_quit
+fi
+
+echo 'Verifying checksum of root filesystem...'
+if [ "$BAR" ] ; then
+	SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS_DEST" | sha1sum | cut -d' ' -f1`
+else
+	SHA1=`sha1sum "$ROOTFS_DEST" | cut -d' ' -f1`
+fi
+
+if [ "$SHA1" != "`cat ${ROOTFS_DEST}.sha1`" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
+	error_quit
+fi
+
+echo 'Verifying checksum of modules filesystem...'
+if [ "$BAR" ] ; then
+	SHA1=`$BAR -w 54 -0 ' ' -n "$MODULES_FS_DEST" | sha1sum | cut -d' ' -f1`
+else
+	SHA1=`sha1sum "$MODULES_FS_DEST" | cut -d' ' -f1`
+fi
+
+if [ "$SHA1" != "`cat ${MODULES_FS_DEST}.sha1`" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nUpdated modules filesystem is corrupted!' 9 34
+	error_quit
+fi
+
+echo 'Verifying checksum of bootloader...'
+if [ "$BAR" ] ; then
+	SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
+else
+	SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
+fi
+
+if [ "$SHA1" != "`cat ${BOOTLOADER}.sha1`" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nBootloader is corrupted!' 9 34
+	error_quit
+fi
+
 umount "${SYSTEM_MOUNTPOINT}/fs"
 
 # Shrink the image
-python trimfat.py "${SYSTEM_MOUNTPOINT}/system.bin"
+echo ''
+python trimfat.py "${SYSTEM_IMAGE}"
+
+echo ''
+echo 'Calculating checksum of flash image...'
+if [ "$BAR" ] ; then
+	IMAGE_SHA1=`$BAR -w 54 -0 ' ' -n "${SYSTEM_IMAGE}" | sha1sum | cut -d' ' -f1`
+else
+	IMAGE_SHA1=`sha1sum "${SYSTEM_IMAGE}" | cut -d' ' -f1`
+fi
 
 # Flash the image!
-echo ''
-echo 'Flashing the new system partition. Please be patient.'
+echo 'Flashing the new system partition...'
 if [ "$BAR" ] ; then
-	$BAR -w 54 -0 ' ' -n "${SYSTEM_MOUNTPOINT}/system.bin" | dd of=${SYSTEM_DEVICE} \
+	$BAR -w 54 -0 ' ' -n "${SYSTEM_IMAGE}" | dd of=${SYSTEM_DEVICE} \
 		bs=1b seek=${NEW_START} conv=notrunc 2>/dev/null
 else
-	dd if="${SYSTEM_MOUNTPOINT}/system.bin" of=${SYSTEM_DEVICE} \
+	dd if="${SYSTEM_IMAGE}" of=${SYSTEM_DEVICE} \
 		bs=1b seek=${NEW_START} conv=notrunc 2>/dev/null
 fi
 
 echo 'Flushing write cache... '
 sync
-umount "${SYSTEM_PARTITION}/fs"
+echo 3 > /proc/sys/vm/drop_caches
+
+echo ''
+echo 'Verifying checksum of flashed partition...'
+if [ "$BAR" ] ; then
+	SIZE_KBYTES=`du -k ${SYSTEM_IMAGE} |cut -f1`
+	SIZE_BYTES=$((${SIZE_KBYTES} * 1024))
+	SIZE_BLOCKS=$((${SIZE_KBYTES} * 2))
+	SHA1=`dd if=${SYSTEM_DEVICE} bs=1b skip=${NEW_START} count=${SIZE_BLOCKS} \
+		| $BAR -w 54 -0 ' ' -n -s ${SIZE_BYTES} \
+		| sha1sum | cut -d' ' -f1 `
+else
+	SHA1=`dd if=${SYSTEM_DEVICE} bs=1b skip=${NEW_START} count=${SIZE_BLOCKS} \
+		| sha1sum | cut -d' ' -f1 `
+fi
+
+if [ "$SHA1" -ne "$IMAGE_SHA1" ] ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'ERROR!\n\nFlashed image is corrupted!' 9 34
+	echo "SHA1: $SHA1"
+	echo "IMAGE_SHA1: $IMAGE_SHA1"
+	error_quit
+fi
 
 echo 'Writing new partition table...'
 echo ${NEW_START},${NEW_SIZE} | sfdisk --no-reread -uS -N \
 	${SYSTEM_PART_NUM} ${SYSTEM_DEVICE}
+sync
 
 echo 'Writing new bootloader...'
-if [ -f "$BOOTLOADER" ] ; then
-	dd if="$BOOTLOADER" of=${SYSTEM_DEVICE} bs=512 seek=1 \
-		count=16 conv=notrunc 2>/dev/null
-	sync
-fi
+dd if="$BOOTLOADER" of=${SYSTEM_DEVICE} bs=512 seek=1 \
+	count=16 conv=notrunc 2>/dev/null
+sync
 
 dialog --msgbox 'Update complete!\nThe system will now restart.\n\n
 If for some reason the system fails to boot, try to press the
