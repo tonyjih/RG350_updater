@@ -166,7 +166,7 @@ fi
 
 echo 'Writing new partition table...'
 echo ${NEW_START},${NEW_SIZE} | sfdisk --no-reread -uS -N \
-	${SYSTEM_PART_NUM} ${SYSTEM_DEVICE}
+	${SYSTEM_PART_NUM} ${SYSTEM_DEVICE} >/dev/null 2>&1
 sync
 
 echo 'Writing new bootloader...'
