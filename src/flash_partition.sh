@@ -156,7 +156,7 @@ else
 		| sha1sum | cut -d' ' -f1 `
 fi
 
-if [ "$SHA1" -ne "$IMAGE_SHA1" ] ; then
+if [ "$SHA1" != "$IMAGE_SHA1" ] ; then
 	DIALOGRC="/tmp/dialog_err.rc" \
 		dialog --msgbox 'ERROR!\n\nFlashed image is corrupted!' 9 34
 	echo "SHA1: $SHA1"
