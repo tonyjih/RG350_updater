@@ -116,8 +116,11 @@ fi
 export BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
 # The update will fail if /media/system is mounted,
-# so we first un-mount it
+# so we first un-mount it.
+# For some reason, future ro mounts will also fail if /media/system was
+# mounted rw before it was unmounted.
 if [ -d /media/system ] ; then
+	mount -o remount,ro /media/system
 	umount /media/system
 fi
 
