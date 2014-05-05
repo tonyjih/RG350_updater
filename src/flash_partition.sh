@@ -144,14 +144,15 @@ echo 3 > /proc/sys/vm/drop_caches
 
 echo ''
 echo 'Verifying checksum of flashed partition...'
+SIZE_BYTES=`ls -l ${SYSTEM_IMAGE} | awk '{print $5}'`
 if [ "$BAR" ] ; then
-	SIZE_BYTES=`ls -l ${SYSTEM_IMAGE} | awk '{print $5}'`
-	SIZE_BLOCKS=$(((${SIZE_BYTES} + 511) / 512))
-	SHA1=`dd if=${SYSTEM_DEVICE} bs=1b skip=${NEW_START} count=${SIZE_BLOCKS} \
-		| $BAR -w 54 -0 ' ' -n -s ${SIZE_BYTES} \
+	SHA1=`head -c $((${NEW_START} * 512 + ${SIZE_BYTES})) ${SYSTEM_DEVICE} \
+		| tail -c +$((${NEW_START} * 512 + 1)) \
+		| $BAR -w 54 -0 ' ' -n -b 512 -s ${SIZE_BYTES} \
 		| sha1sum | cut -d' ' -f1 `
 else
-	SHA1=`dd if=${SYSTEM_DEVICE} bs=1b skip=${NEW_START} count=${SIZE_BLOCKS} \
+	SHA1=`head -c $((${NEW_START} * 512 + ${SIZE_BYTES})) ${SYSTEM_DEVICE} \
+		| tail -c +$((${NEW_START} * 512 + 1)) \
 		| sha1sum | cut -d' ' -f1 `
 fi
 
