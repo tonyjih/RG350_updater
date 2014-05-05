@@ -23,11 +23,6 @@ done
 # Get kernel metadata.
 if [ -r "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
-	if [ ! -r "modules.squashfs" ] ; then
-		echo "ERROR: no modules.squashfs file found"
-		exit 1
-	fi
-	MODULES_FS=`realpath modules.squashfs`
 fi
 
 # Get rootfs metadata.
@@ -56,7 +51,6 @@ echo "=========================="
 echo
 echo "Bootloaders:          $BOOTLOADERS"
 echo "Kernel:               $KERNEL"
-echo "Modules file system:  $MODULES_FS"
 echo "Root file system:     $ROOTFS"
 echo "  build date:         $DATE"
 echo
@@ -66,8 +60,8 @@ echo
 # Write metadata.
 cat > output/default.gcw0.desktop <<EOF
 [Desktop Entry]
-Name=OS Update
-Comment=OpenDingux Update $DATE
+Name=Anti-Corruption
+Comment=OpenDingux Anti-Corruption Mini-Update $DATE
 Exec=update.sh
 Icon=opendingux
 Terminal=true
@@ -85,20 +79,14 @@ EOF
 # script expects.
 if [ -e "$KERNEL" ] ; then
 	cp -a $KERNEL output/vmlinuz.bin
-	cp -a $MODULES_FS output/modules.squashfs
 	KERNEL="output/vmlinuz.bin"
-	MODULES_FS="output/modules.squashfs"
-	chmod a-x "$KERNEL" "$MODULES_FS"
+	chmod a-x "$KERNEL"
 
 	echo -n "Calculating SHA1 sum of kernel... "
 	sha1sum "$KERNEL" | cut -d' ' -f1 > "output/vmlinuz.bin.sha1"
 	echo "done"
 
-	echo -n "Calculating SHA1 sum of modules file-system... "
-	sha1sum "$MODULES_FS" | cut -d' ' -f1 > "output/modules.squashfs.sha1"
-	echo "done"
-
-	KERNEL="$KERNEL output/vmlinuz.bin.sha1 $MODULES_FS output/modules.squashfs.sha1"
+	KERNEL="$KERNEL output/vmlinuz.bin.sha1"
 fi
 
 if [ -e "$ROOTFS" ] ; then
@@ -131,7 +119,7 @@ fi
 echo "$DATE" > output/date.txt
 
 # Create OPK.
-OPK_FILE=output/gcw0-update-$DATE.opk
+OPK_FILE=output/gcw0-anti-corruption-update-$DATE.opk
 mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \

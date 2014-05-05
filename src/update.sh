@@ -64,6 +64,12 @@ fi
 
 echo "screen_color = (RED,RED,ON)" > /tmp/dialog_err.rc
 
+if grep -q 'present[\t ][\t ]65535' /proc/zoneinfo ; then
+	DIALOGRC="/tmp/dialog_err.rc" \
+		dialog --msgbox 'This system already has the corruption workaround!\n\nThis update would do no good.' 9 34
+	error_quit
+fi
+
 if [ -f "$KERNEL" -a -f "$KERNEL.sha1" -a -f "$KERNEL_DEST.sha1" ] ; then
 	SHA1_OLD=`cat "$KERNEL_DEST.sha1"`
 	SHA1_NEW=`cat "$KERNEL.sha1"`
@@ -85,14 +91,6 @@ if [ -f "$ROOTFS" -a -f "$ROOTFS.sha1" -a "$UP_TO_DATE" = "yes" ] ; then
 	SHA1_NEW=`cat "$ROOTFS.sha1"`
 	if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
 		UP_TO_DATE=no
-	fi
-fi
-
-if [ "$UP_TO_DATE" = "yes" ] ; then
-	dialog --defaultno --yesno 'The system seems to be already up to date.\n\n
-Do you really want to continue?' 10 30
-	if [ $? -ne 0 ] ; then
-		error_quit
 	fi
 fi
 
