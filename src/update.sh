@@ -168,7 +168,9 @@ if [ -f "$KERNEL" ] ; then
 			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
 		error_quit
 	fi
+fi
 
+if [ -f "$MODULES_FS" ] ; then
 	echo 'Installing updated modules filesystem... '
 
 	if [ "$BAR" ] ; then
@@ -223,7 +225,9 @@ if [ -f "$KERNEL" ] ; then
 			error_quit
 		fi
 	fi
+fi
 
+if [ -f "$MODULES_FS" ] ; then
 	if [ -f "$MODULES_FS.sha1" ] ; then
 		echo 'Verifying checksum of updated modules filesystem...'
 		if [ "$BAR" ] ; then
@@ -304,7 +308,9 @@ if [ -f "$KERNEL" ] ; then
 		sync
 	fi
 
-	mv "$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST"
+	if [ -f "$MODULES_FS_TMP_DEST" ] ; then
+		mv "$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST"
+	fi
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
 	sync
 fi
