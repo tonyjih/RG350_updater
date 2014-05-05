@@ -127,10 +127,12 @@ fi
 mkdir -p "$SYSTEM_MOUNTPOINT"
 
 # Checks if the system partition has been resized.
-SYSTEM_END_THEORY=819199
-SYSTEM_END=$(partx $SYSTEM_DEVICE -n $SYSTEM_PART_NUM -g -o end)
-if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
-	exec ./flash_partition.sh
+if [ -f "$ROOTFS" ] ; then
+	SYSTEM_END_THEORY=819199
+	SYSTEM_END=$(partx $SYSTEM_DEVICE -n $SYSTEM_PART_NUM -g -o end)
+	if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
+		exec ./flash_partition.sh
+	fi
 fi
 
 # Linux will refuse to mount read-write if other mount points are read-only,
