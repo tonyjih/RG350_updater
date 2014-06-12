@@ -105,7 +105,7 @@ clear
 echo 'Update in progress - please be patient.'
 echo
 
-HWVARIANT="`cat /proc/cmdline |sed 's/.*hwvariant=\([a-z_0-9]\+\).*/\1/'`"
+HWVARIANT="`sed -n 's/.*hwvariant=\([a-z_0-9]\+\).*/\1/p' /proc/cmdline`"
 
 if [ -z "$HWVARIANT" ] ; then
 	# Only old "Frankenzeros" can have a bootloader so old that
