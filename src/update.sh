@@ -137,8 +137,12 @@ fi
 
 # Linux will refuse to mount read-write if other mount points are read-only,
 # so we mount read-only first and remount read-write after
-mount -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
-mount -o remount,rw "$SYSTEM_MOUNTPOINT"
+if [ -z "`grep ${SYSTEM_PARTITION}.*rw /proc/mounts`" ] ; then
+	mount -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+	mount -o remount,rw "$SYSTEM_MOUNTPOINT"
+else
+	mount -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+fi
 
 if [ -f "$ROOTFS" ] ; then
 	echo 'Installing updated root filesystem... '
