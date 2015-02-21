@@ -315,8 +315,8 @@ if [ -f "$KERNEL" ] ; then
 	sync
 fi
 
-if [ -f "$BOOTLOADER" ] ; then
-	dd if="$BOOTLOADER" of="$SYSTEM_DEVICE" bs=512 seek=1 \
+if [ -f "$BOOTLOADER" -a "$SYSTEM_PARTITION" = "/dev/mmcblk0p1" ] ; then
+	dd if="$BOOTLOADER" of=/dev/mmcblk0 bs=512 seek=1 \
 		count=16 conv=notrunc 2>/dev/null
 	sync
 fi
