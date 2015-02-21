@@ -19,7 +19,7 @@ MODULES_FS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_modules.bin
 MODULES_FS_DEST=$SYSTEM_MOUNTPOINT/update_m.bin
 MODULES_FS_CURRENT=$SYSTEM_MOUNTPOINT/modules.squashfs
 
-if [ `cat /proc/cmdline |grep rootfs_bak` ] ; then
+if [ `grep rootfs_bak /proc/cmdline` ] ; then
 	# If we're running the backup rootfs, we can overwrite the
 	# regular rootfs without problem
 	ROOTFS_DEST=$ROOTFS_CURRENT
@@ -41,8 +41,8 @@ error_quit() {
 		"$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST" "${MODULES_FS_DEST}.sha1"
 
 	# Forces other mount points to be read-only before unmounting
-	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro "$SYSTEM_MOUNTPOINT"
-	umount "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro "$SYSTEM_MOUNTPOINT" 2>/dev/null
+	umount "$SYSTEM_MOUNTPOINT" 2>/dev/null
 	exit 1
 }
 
