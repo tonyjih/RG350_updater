@@ -57,6 +57,26 @@ perform the update.
 
 Do you want to update now?"
 
+# The update will fail if /media/system is mounted,
+# so we first un-mount it.
+# For some reason, future ro mounts will also fail if /media/system was
+# mounted rw before it was unmounted.
+if [ -d /media/system ] ; then
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro /media/system
+	umount /media/system
+fi
+
+mkdir -p "$SYSTEM_MOUNTPOINT"
+
+# Linux will refuse to mount read-write if other mount points are read-only,
+# so we mount read-only first and remount read-write after
+if [ -z "`grep ${SYSTEM_PARTITION}.*rw /proc/mounts`" ] ; then
+	mount -t "$SYSTEM_PARTITION_TYPE" -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,rw "$SYSTEM_MOUNTPOINT"
+else
+	mount -t "$SYSTEM_PARTITION_TYPE" -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+fi
+
 UP_TO_DATE=yes
 export BAR=`which bar`
 
@@ -118,17 +138,6 @@ fi
 
 export BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 
-# The update will fail if /media/system is mounted,
-# so we first un-mount it.
-# For some reason, future ro mounts will also fail if /media/system was
-# mounted rw before it was unmounted.
-if [ -d /media/system ] ; then
-	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro /media/system
-	umount /media/system
-fi
-
-mkdir -p "$SYSTEM_MOUNTPOINT"
-
 if [ "$SYSTEM_PARTITION" = "/dev/mmcblk0p1" ] ; then
 # Checks if the system partition has been resized.
 
@@ -137,15 +146,6 @@ if [ "$SYSTEM_PARTITION" = "/dev/mmcblk0p1" ] ; then
 	if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
 		exec ./flash_partition.sh
 	fi
-fi
-
-# Linux will refuse to mount read-write if other mount points are read-only,
-# so we mount read-only first and remount read-write after
-if [ -z "`grep ${SYSTEM_PARTITION}.*rw /proc/mounts`" ] ; then
-	mount -t "$SYSTEM_PARTITION_TYPE" -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
-	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,rw "$SYSTEM_MOUNTPOINT"
-else
-	mount -t "$SYSTEM_PARTITION_TYPE" -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
 fi
 
 if [ -f "$ROOTFS" ] ; then
