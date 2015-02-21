@@ -143,7 +143,7 @@ if [ "$SYSTEM_PARTITION" = "/dev/mmcblk0p1" ] ; then
 
 	SYSTEM_END_THEORY=819199
 	SYSTEM_END=`partx /dev/mmcblk0 -n 1 -g -o end`
-	if [ $SYSTEM_END_THEORY -ne $SYSTEM_END ] ; then
+	if [ $SYSTEM_END_THEORY -gt $SYSTEM_END ] ; then
 		exec ./flash_partition.sh
 	fi
 fi
