@@ -7,10 +7,7 @@ export MODULES_FS=./modules.squashfs
 export ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
-export SYSTEM_DEVICE=/dev/mmcblk0
-export SYSTEM_PART_NUM=1
-export SYSTEM_PARTITION=${SYSTEM_DEVICE}p${SYSTEM_PART_NUM}
-export SYSTEM_MOUNTPOINT=/mnt/_system_update
+SYSTEM_MOUNTPOINT=/mnt/_system_update
 KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/update_kernel.bin
 KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
 KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
@@ -32,13 +29,19 @@ else
 	ROOTFS_DEST=$SYSTEM_MOUNTPOINT/update_r.bin
 fi
 
+SYSTEM_PARTITION="`sed -n 's/.*boot=\([a-z_/:0-9]\+\).*/\1/p' /proc/cmdline`"
+[ -z "$SYSTEM_PARTITION" ] && SYSTEM_PARTITION="`sed -n 's/.*root=\([a-z_/:0-9]\+\).*/\1/p' /proc/cmdline`"
+
+SYSTEM_PARTITION_TYPE="`sed -n 's/.*rootfstype=\([a-z0-9]\+\).*/\1/p' /proc/cmdline`"
+[ -z "$SYSTEM_PARTITION_TYPE" ] && SYSTEM_PARTITION_TYPE="auto"
+
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" \
 		"$ROOTFS_TMP_DEST" "$ROOTFS_DEST" "${ROOTFS_DEST}.sha1" \
 		"$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST" "${MODULES_FS_DEST}.sha1"
 
 	# Forces other mount points to be read-only before unmounting
-	mount -o remount,ro "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro "$SYSTEM_MOUNTPOINT"
 	umount "$SYSTEM_MOUNTPOINT"
 	exit 1
 }
@@ -120,7 +123,7 @@ export BOOTLOADER="./ubiboot-$HWVARIANT.bin"
 # For some reason, future ro mounts will also fail if /media/system was
 # mounted rw before it was unmounted.
 if [ -d /media/system ] ; then
-	mount -o remount,ro /media/system
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,ro /media/system
 	umount /media/system
 fi
 
@@ -139,10 +142,10 @@ fi
 # Linux will refuse to mount read-write if other mount points are read-only,
 # so we mount read-only first and remount read-write after
 if [ -z "`grep ${SYSTEM_PARTITION}.*rw /proc/mounts`" ] ; then
-	mount -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
-	mount -o remount,rw "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,rw "$SYSTEM_MOUNTPOINT"
 else
-	mount -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+	mount -t "$SYSTEM_PARTITION_TYPE" -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
 fi
 
 if [ -f "$ROOTFS" ] ; then

@@ -4,10 +4,15 @@ NEW_START=32768
 NEW_END=819200
 NEW_SIZE=$((${NEW_END} - ${NEW_START}))
 
+SYSTEM_MOUNTPOINT=/mnt/_system_update
+
 SYSTEM_IMAGE=${SYSTEM_MOUNTPOINT}/system.bin
 KERNEL_DEST=${SYSTEM_MOUNTPOINT}/fs/vmlinuz.bin
 ROOTFS_DEST=${SYSTEM_MOUNTPOINT}/fs/rootfs.squashfs
 MODULES_FS_DEST=${SYSTEM_MOUNTPOINT}/fs/modules.squashfs
+
+SYSTEM_DEVICE=/dev/mmcblk0
+SYSTEM_PART_NUM=1
 
 error_quit() {
 	umount ${SYSTEM_MOUNTPOINT}/fs
