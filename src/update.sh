@@ -70,8 +70,8 @@ mkdir -p "$SYSTEM_MOUNTPOINT"
 
 # Linux will refuse to mount read-write if other mount points are read-only,
 # so we mount read-only first and remount read-write after
-if [ -z "`grep ${SYSTEM_PARTITION}.*rw /proc/mounts`" ] ; then
-	mount -t "$SYSTEM_PARTITION_TYPE" -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
+mount -t "$SYSTEM_PARTITION_TYPE" -o ro "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT" 2>/dev/null
+if [ $? -eq 0 ] ; then
 	mount -t "$SYSTEM_PARTITION_TYPE" -o remount,rw "$SYSTEM_MOUNTPOINT"
 else
 	mount -t "$SYSTEM_PARTITION_TYPE" -o rw "$SYSTEM_PARTITION" "$SYSTEM_MOUNTPOINT"
