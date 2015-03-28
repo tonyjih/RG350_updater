@@ -2,6 +2,7 @@
 
 cd `dirname $0`
 
+export MININIT=./mininit-syspart
 export KERNEL=./vmlinuz.bin
 export MODULES_FS=./modules.squashfs
 export ROOTFS=./rootfs.squashfs
@@ -18,6 +19,9 @@ ROOTFS_CURRENT=$SYSTEM_MOUNTPOINT/rootfs.squashfs
 MODULES_FS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_modules.bin
 MODULES_FS_DEST=$SYSTEM_MOUNTPOINT/update_m.bin
 MODULES_FS_CURRENT=$SYSTEM_MOUNTPOINT/modules.squashfs
+
+MININIT_TMP_DEST=$SYSTEM_MOUNTPOINT/update_mininit
+MININIT_DEST=$SYSTEM_MOUNTPOINT/mininit-syspart
 
 if [ `grep rootfs_bak /proc/cmdline` ] ; then
 	# If we're running the backup rootfs, we can overwrite the
@@ -36,7 +40,7 @@ SYSTEM_PARTITION_TYPE="`sed -n 's/.*rootfstype=\([a-z0-9]\+\).*/\1/p' /proc/cmdl
 [ -z "$SYSTEM_PARTITION_TYPE" ] && SYSTEM_PARTITION_TYPE="auto"
 
 error_quit() {
-	rm -f "$KERNEL_TMP_DEST" \
+	rm -f "$KERNEL_TMP_DEST" "$MININIT_TMP_DEST" \
 		"$ROOTFS_TMP_DEST" "$ROOTFS_DEST" "${ROOTFS_DEST}.sha1" \
 		"$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST" "${MODULES_FS_DEST}.sha1"
 
@@ -194,6 +198,22 @@ if [ -f "$KERNEL" ] ; then
 	fi
 fi
 
+if [ -f "$MININIT" ] ; then
+	echo 'Installing updated startup program... '
+
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n -o "$MININIT_TMP_DEST" "$MININIT"
+	else
+		cp "$MININIT" "$MININIT_TMP_DEST"
+	fi
+
+	if [ $? -ne 0 ] ; then
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUnable to update startup program.' 8 34
+		error_quit
+	fi
+fi
+
 echo 'Flushing write cache... '
 sync
 echo ''
@@ -247,6 +267,21 @@ if [ -f "$KERNEL" ] ; then
 				dialog --msgbox 'ERROR!\n\nUpdated modules filesystem is corrupted!' 9 34
 			error_quit
 		fi
+	fi
+fi
+
+if [ -f "$MININIT" -a -f "${MININIT}.sha1" ] ; then
+	echo 'Verifying checksum of updated startup program...'
+	if [ "$BAR" ] ; then
+		SHA1=`$BAR -w 54 -0 ' ' -n "$MININIT_TMP_DEST" | sha1sum | cut -d' ' -f1`
+	else
+		SHA1=`sha1sum "$MININIT_TMP_DEST" | cut -d' ' -f1`
+	fi
+
+	if [ "$SHA1" != "`cat ${MININIT}.sha1`" ] ; then
+		DIALOGRC="/tmp/dialog_err.rc" \
+			dialog --msgbox 'ERROR!\n\nUpdated startup program is corrupted!' 9 34
+		error_quit
 	fi
 fi
 
@@ -316,6 +351,22 @@ if [ -f "$KERNEL" ] ; then
 
 	mv "$MODULES_FS_TMP_DEST" "$MODULES_FS_DEST"
 	mv "$KERNEL_TMP_DEST" "$KERNEL_DEST"
+	sync
+fi
+
+if [ -f "$MININIT" ] ; then
+	# Synchronize the dates
+	touch -d "`date -r "$MININIT" +'%F %T'`" "$MININIT_TMP_DEST"
+
+	if [ -f "${MININIT}.sha1" ] ; then
+		cp "${MININIT}.sha1" "${MININIT_DEST}.sha1"
+		sync
+	fi
+
+	# mininit will use those directories as mountpoints
+	mkdir -p ${SYSTEM_MOUNTPOINT}/dev ${SYSTEM_MOUNTPOINT}/root
+
+	mv "$MININIT_TMP_DEST" "$MININIT_DEST"
 	sync
 fi
 

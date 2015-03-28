@@ -20,6 +20,10 @@ for i in $BOOTLOADER_VARIANTS ; do
 	fi
 done
 
+if [ -r "mininit-syspart" ] ; then
+	MININIT=`realpath mininit-syspart`
+fi
+
 # Get kernel metadata.
 if [ -r "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
@@ -55,6 +59,7 @@ echo
 echo "=========================="
 echo
 echo "Bootloaders:          $BOOTLOADERS"
+echo "Mininit:              $MININIT"
 echo "Kernel:               $KERNEL"
 echo "Modules file system:  $MODULES_FS"
 echo "Root file system:     $ROOTFS"
@@ -127,6 +132,16 @@ if [ "$BOOTLOADERS" ] ; then
 	echo "done"
 fi
 
+if [ "$MININIT" ] ; then
+	cp -a $MININIT output/mininit-syspart
+	MININIT="output/mininit-syspart"
+
+	echo -n "Calculating SHA1 sum of mininit-syspart... "
+	sha1sum "$MININIT" | cut -d' ' -f1 > "output/mininit-syspart.sha1"
+	echo "done"
+
+	MININIT="$MININIT output/mininit-syspart.sha1"
+fi
 
 echo "$DATE" > output/date.txt
 
@@ -140,6 +155,7 @@ mksquashfs \
 	src/flash_partition.sh \
 	output/date.txt \
 	$BOOTLOADERS \
+	$MININIT \
 	$KERNEL \
 	$ROOTFS \
 	$OPK_FILE \

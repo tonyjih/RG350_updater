@@ -3,3 +3,4 @@ rootfs.squashfs
 vmlinuz.bin
 ubiboot-*.bin
 modules.squashfs
+mininit-syspart
