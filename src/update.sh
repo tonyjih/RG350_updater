@@ -373,6 +373,7 @@ if [ -f "$MININIT" ] ; then
 	# mininit will use those directories as mountpoints
 	mkdir -p ${SYSTEM_MOUNTPOINT}/dev ${SYSTEM_MOUNTPOINT}/root
 
+	chmod +x "$MININIT_TMP_DEST"
 	mv "$MININIT_TMP_DEST" "$MININIT_DEST"
 	sync
 fi
