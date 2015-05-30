@@ -24,9 +24,14 @@ if [ -r "mininit-syspart" ] ; then
 	MININIT=`realpath mininit-syspart`
 fi
 
-# Get kernel metadata.
 if [ -r "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
+elif [ -r "uImage" ] ; then
+	KERNEL=`realpath uImage`
+fi
+
+# Get kernel metadata.
+if [ "$KERNEL" ] ; then
 	if [ ! -r "modules.squashfs" ] ; then
 		echo "ERROR: no modules.squashfs file found"
 		exit 1

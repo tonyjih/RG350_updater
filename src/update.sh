@@ -3,15 +3,22 @@
 cd `dirname $0`
 
 export MININIT=./mininit-syspart
-export KERNEL=./vmlinuz.bin
 export MODULES_FS=./modules.squashfs
 export ROOTFS=./rootfs.squashfs
 DATE_FILE=./date.txt
 
 SYSTEM_MOUNTPOINT=/mnt/_system_update
+
+if [ -f ./uImage ] ; then
+	export KERNEL=./uImage
+	KERNEL_DEST=$SYSTEM_MOUNTPOINT/uImage
+	KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/uImage.bak
+else
+	export KERNEL=./vmlinuz.bin
+	KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
+	KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
+fi
 KERNEL_TMP_DEST=$SYSTEM_MOUNTPOINT/update_kernel.bin
-KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin
-KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/vmlinuz.bak
 
 ROOTFS_TMP_DEST=$SYSTEM_MOUNTPOINT/update_rootfs.bin
 ROOTFS_CURRENT=$SYSTEM_MOUNTPOINT/rootfs.squashfs

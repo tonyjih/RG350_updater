@@ -4,3 +4,4 @@ vmlinuz.bin
 ubiboot-*.bin
 modules.squashfs
 mininit-syspart
+uImage
