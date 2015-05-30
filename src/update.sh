@@ -46,6 +46,23 @@ SYSTEM_PARTITION="`sed -n 's/.*boot=\([a-z_/:0-9]\+\).*/\1/p' /proc/cmdline`"
 SYSTEM_PARTITION_TYPE="`sed -n 's/.*rootfstype=\([a-z0-9]\+\).*/\1/p' /proc/cmdline`"
 [ -z "$SYSTEM_PARTITION_TYPE" ] && SYSTEM_PARTITION_TYPE="auto"
 
+export BAR=`which bar`
+export PV=`which pv`
+
+cat_file() {
+	if [ "$BAR" ] ; then
+		$BAR -w 54 -0 ' ' -n "$1"
+	elif [ "$PV" ] ; then
+		$PV -p "$1"
+	else
+		cat "$1"
+	fi
+}
+
+copy_file() {
+	cat_file $1 > $2
+}
+
 error_quit() {
 	rm -f "$KERNEL_TMP_DEST" "$MININIT_TMP_DEST" \
 		"$ROOTFS_TMP_DEST" "$ROOTFS_DEST" "${ROOTFS_DEST}.sha1" \
@@ -89,7 +106,6 @@ else
 fi
 
 UP_TO_DATE=yes
-export BAR=`which bar`
 
 if [ -f "$DATE_FILE" ] ; then
 	DATE="`cat $DATE_FILE`"
@@ -162,12 +178,7 @@ fi
 if [ -f "$ROOTFS" ] ; then
 	echo 'Installing updated root filesystem... '
 
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$ROOTFS_TMP_DEST" "$ROOTFS"
-	else
-		cp "$ROOTFS" "$ROOTFS_TMP_DEST"
-	fi
-
+	copy_file "$ROOTFS" "$ROOTFS_TMP_DEST"
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update RootFS.\nDo you have enough space available?' 10 34
@@ -178,12 +189,7 @@ fi
 if [ -f "$KERNEL" ] ; then
 	echo 'Installing updated kernel... '
 
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$KERNEL_TMP_DEST" "$KERNEL"
-	else
-		cp "$KERNEL" "$KERNEL_TMP_DEST"
-	fi
-
+	copy_file "$KERNEL" "$KERNEL_TMP_DEST"
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update kernel.' 8 34
@@ -192,12 +198,7 @@ if [ -f "$KERNEL" ] ; then
 
 	echo 'Installing updated modules filesystem... '
 
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$MODULES_FS_TMP_DEST" "$MODULES_FS"
-	else
-		cp "$MODULES_FS" "$MODULES_FS_TMP_DEST"
-	fi
-
+	copy_file "$MODULES_FS" "$MODULES_FS_TMP_DEST"
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update modules filesystem.' 8 34
@@ -208,12 +209,7 @@ fi
 if [ -f "$MININIT" ] ; then
 	echo 'Installing updated startup program... '
 
-	if [ "$BAR" ] ; then
-		$BAR -w 54 -0 ' ' -n -o "$MININIT_TMP_DEST" "$MININIT"
-	else
-		cp "$MININIT" "$MININIT_TMP_DEST"
-	fi
-
+	copy_file "$MININIT" "$MININIT_TMP_DEST"
 	if [ $? -ne 0 ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUnable to update startup program.' 8 34
@@ -231,12 +227,8 @@ echo 3 > /proc/sys/vm/drop_caches
 if [ -f "$ROOTFS" ] ; then
 	if [ -f "$ROOTFS.sha1" ] ; then
 		echo 'Verifying checksum of updated root filesystem...'
-		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$ROOTFS_TMP_DEST" | sha1sum | cut -d' ' -f1`
-		else
-			SHA1=`sha1sum "$ROOTFS_TMP_DEST" | cut -d' ' -f1`
-		fi
 
+		SHA1=`cat_file "$ROOTFS_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		if [ "$SHA1" != "`cat $ROOTFS.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated RootFS is corrupted!' 9 34
@@ -248,12 +240,8 @@ fi
 if [ -f "$KERNEL" ] ; then
 	if [ -f "$KERNEL.sha1" ] ; then
 		echo 'Verifying checksum of updated kernel...'
-		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$KERNEL_TMP_DEST" | sha1sum | cut -d' ' -f1`
-		else
-			SHA1=`sha1sum "$KERNEL_TMP_DEST" | cut -d' ' -f1`
-		fi
 
+		SHA1=`cat_file "$KERNEL_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		if [ "$SHA1" != "`cat $KERNEL.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated kernel is corrupted!' 9 34
@@ -263,12 +251,8 @@ if [ -f "$KERNEL" ] ; then
 
 	if [ -f "$MODULES_FS.sha1" ] ; then
 		echo 'Verifying checksum of updated modules filesystem...'
-		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$MODULES_FS_TMP_DEST" | sha1sum | cut -d' ' -f1`
-		else
-			SHA1=`sha1sum "$MODULES_FS_TMP_DEST" | cut -d' ' -f1`
-		fi
 
+		SHA1=`cat_file "$MODULES_FS_TMP_DEST" | sha1sum | cut -d' ' -f1`
 		if [ "$SHA1" != "`cat $MODULES_FS.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated modules filesystem is corrupted!' 9 34
@@ -279,12 +263,8 @@ fi
 
 if [ -f "$MININIT" -a -f "${MININIT}.sha1" ] ; then
 	echo 'Verifying checksum of updated startup program...'
-	if [ "$BAR" ] ; then
-		SHA1=`$BAR -w 54 -0 ' ' -n "$MININIT_TMP_DEST" | sha1sum | cut -d' ' -f1`
-	else
-		SHA1=`sha1sum "$MININIT_TMP_DEST" | cut -d' ' -f1`
-	fi
 
+	SHA1=`cat_file "$MININIT_TMP_DEST" | sha1sum | cut -d' ' -f1`
 	if [ "$SHA1" != "`cat ${MININIT}.sha1`" ] ; then
 		DIALOGRC="/tmp/dialog_err.rc" \
 			dialog --msgbox 'ERROR!\n\nUpdated startup program is corrupted!' 9 34
@@ -295,12 +275,8 @@ fi
 if [ -f "$BOOTLOADER" ] ; then
 	if [ -f "$BOOTLOADER.sha1" ] ; then
 		echo 'Verifying checksum of updated bootloader...'
-		if [ "$BAR" ] ; then
-			SHA1=`$BAR -w 54 -0 ' ' -n "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
-		else
-			SHA1=`sha1sum "$BOOTLOADER" | cut -d' ' -f1`
-		fi
 
+		SHA1=`cat_file "$BOOTLOADER" | sha1sum | cut -d' ' -f1`
 		if [ "$SHA1" != "`cat $BOOTLOADER.sha1`" ] ; then
 			DIALOGRC="/tmp/dialog_err.rc" \
 				dialog --msgbox 'ERROR!\n\nUpdated bootloader is corrupted!' 9 34
