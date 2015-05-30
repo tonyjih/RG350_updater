@@ -130,7 +130,7 @@ if [ -f "$MODULES_FS" -a -f "$MODULES_FS.sha1" -a -f "$MODULES_FS_CURRENT.sha1" 
 	fi
 fi
 
-if [ -f "$ROOTFS" -a -f "$ROOTFS.sha1" -a "$UP_TO_DATE" = "yes" ] ; then
+if [ -f "$ROOTFS" -a -f "$ROOTFS.sha1" -a -f "$ROOTFS_CURRENT.sha1" -a "$UP_TO_DATE" = "yes" ] ; then
 	SHA1_OLD=`cat "$ROOTFS_CURRENT.sha1"`
 	SHA1_NEW=`cat "$ROOTFS.sha1"`
 	if [ "$SHA1_OLD" != "$SHA1_NEW" ] ; then
