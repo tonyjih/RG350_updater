@@ -13,6 +13,10 @@ if [ -f ./uImage ] ; then
 	export KERNEL=./uImage
 	KERNEL_DEST=$SYSTEM_MOUNTPOINT/uImage
 	KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/uImage.bak
+elif [ -f ./uzImage.bin ] ; then
+	export KERNEL=./uzImage.bin
+	KERNEL_DEST=$SYSTEM_MOUNTPOINT/uzImage.bin
+	KERNEL_BACKUP=$SYSTEM_MOUNTPOINT/uzImage.bak
 else
 	export KERNEL=./vmlinuz.bin
 	KERNEL_DEST=$SYSTEM_MOUNTPOINT/vmlinuz.bin

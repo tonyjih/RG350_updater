@@ -28,6 +28,8 @@ if [ -r "vmlinuz.bin" ] ; then
 	KERNEL=`realpath vmlinuz.bin`
 elif [ -r "uImage" ] ; then
 	KERNEL=`realpath uImage`
+elif [ -r "uzImage.bin" ] ; then
+	KERNEL=`realpath uzImage.bin`
 fi
 
 # Get kernel metadata.

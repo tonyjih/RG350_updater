@@ -5,3 +5,4 @@ ubiboot-*.bin
 modules.squashfs
 mininit-syspart
 uImage
+uzImage.bin
