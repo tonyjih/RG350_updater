@@ -6,7 +6,7 @@ umask 0022
 rm -rf output
 mkdir output
 
-BOOTLOADER_VARIANTS="v11_ddr2_256mb v20_mddr_512mb"
+BOOTLOADER_VARIANTS="rg350"
 
 for i in $BOOTLOADER_VARIANTS ; do
 	if [ -e "ubiboot-$i.bin" ] ; then
@@ -153,7 +153,7 @@ fi
 echo "$DATE" > output/date.txt
 
 # Create OPK.
-OPK_FILE=output/gcw0-update-$DATE.opk
+OPK_FILE=output/rg350-update-$DATE.opk
 mksquashfs \
 	output/default.gcw0.desktop \
 	src/opendingux.png \

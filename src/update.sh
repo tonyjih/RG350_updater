@@ -84,7 +84,7 @@ While we carefully constructed this updater,
 it is possible flaws in the updater or in
 the updated OS could lead to \Zb\Z3data loss\Zn. We
 recommend that you \Zb\Z3backup\Zn all valuable
-personal data on your GCW Zero before you
+personal data on your RG-350 before you
 perform the update.
 
 Do you want to update now?"
